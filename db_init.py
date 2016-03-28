@@ -49,7 +49,7 @@ def insert_matches(db, player_names):
         })
 
     db['matches'].drop()
-    db['matches'].ensure_index('player_id', 1)
+    db['matches'].ensure_index('participants.player_id', 1)
     db['matches'].ensure_index('match_id', 1)
     db['matches'].insert_many(to_insert)
 
