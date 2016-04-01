@@ -1,11 +1,12 @@
-from flask import Flask, Response, Request, request
+from flask import Flask, Response, Request, request, Blueprint
 from flask.json import jsonify
 from pymongo import MongoClient
-from db_init import db_init
 
 app = Flask(__name__)
-app.debug = True
-db = MongoClient()['topspin']
+app.config.from_pyfile('config.py')
+
+db = MongoClient(app.config.get('DB_HOST', 'localhost'),
+                 app.config.get('DB_PORT', 27017))[app.config.get('DATABASE', 'ladder')]
 
 Players = db['players']
 Matches = db['matches']
@@ -31,10 +32,11 @@ def hello():
     return jsonify(**response_load(None))
 
 
-@app.route("/api/v1/players", methods=['GET'])
+@app.route("/api/v1/players")
 def get_players():
     users = list(Players.find({}, {'_id': 0}))
     return jsonify(**response_load(data={'users': users}))
+
 
 @app.route("/api/v1/players", methods=['POST'])
 def add_player():
@@ -55,13 +57,13 @@ def add_player():
     return jsonify(**response_load(data="Inserted 1 player"))
 
 
-@app.route("/api/v1/matches", methods=['GET'])
+@app.route("/api/v1/matches")
 def get_matches():
     matches = list(Matches.find({}, {'_id': 0}))
     return jsonify(**response_load(data={'matches': matches}))
 
 
-@app.route("/api/v1/players/<player_id>", methods=['GET'])
+@app.route("/api/v1/players/<player_id>")
 def get_player(player_id):
     user = Players.find_one({'player_id': player_id}, {'_id': 0})
 
@@ -79,5 +81,4 @@ def get_player_matches(player_id):
 
 
 if __name__ == '__main__':
-    db_init(db)
     app.run()
