@@ -1,6 +1,9 @@
 from flask import Flask, Response, Request, request, Blueprint
 from flask.json import jsonify
 from pymongo import MongoClient
+from cerberus import Validator
+from models.player import PlayerSchema
+from models.match import MatchSchema
 
 app = Flask(__name__)
 app.config.from_pyfile('config.py')
@@ -10,6 +13,9 @@ db = MongoClient(app.config.get('DB_HOST', 'localhost'),
 
 Players = db['players']
 Matches = db['matches']
+
+players_validator = Validator(PlayerSchema)
+matches_validator = Validator(MatchSchema)
 
 
 def response_load(data=None, status="success", reason=None):
@@ -41,20 +47,14 @@ def get_players():
 @app.route("/api/v1/players", methods=['POST'])
 def add_player():
     json_request = request.get_json()
-    required_fields = ['player_id', 'rating']
-    optional_fields = ['first_name', 'k_factor', 'slack_id']
-
-    _missing = []
-    for rf in required_fields:
-        if rf not in json_request:
-            _missing.append(rf)
-
-    if len(_missing) > 0:
-        return jsonify(**response_load(reason=missing(_missing), status="error"))
+    is_valid = players_validator.validate(json_request)
+    if is_valid:
+        if Players.find_one({'player_id': json_request['player_id']}) is not None:
+            return jsonify(**response_load(status="error", reason="Player already exists"))
+        Players.insert_one(json_request)
+        return jsonify(**response_load())
     else:
-        Players.insert_one({k: v for k, v in json_request.iteritems() if k in required_fields + optional_fields})
-
-    return jsonify(**response_load(data="Inserted 1 player"))
+        return jsonify(**response_load(reason="Validation errors", data=players_validator.errors, status="error"))
 
 
 @app.route("/api/v1/matches")
