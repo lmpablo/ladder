@@ -25,15 +25,17 @@ class Player(object):
             setattr(self, key, val)
 
 
-def response_load(data=None, status="success", reason=None):
-    resp = {}
+def json_response(data=None, status="success", reason=None, code=200):
+    response_object = {}
+
     if data is not None:
-        resp['data'] = data
+        response_object['data'] = data
     if status is not None:
-        resp['status'] = status
+        response_object['status'] = status
     if reason is not None:
-        resp['reason'] = reason
-    return resp
+        response_object['reason'] = reason
+
+    return jsonify(**response_object), code
 
 
 def missing(field_list):
@@ -42,13 +44,13 @@ def missing(field_list):
 
 @app.route("/")
 def hello():
-    return jsonify(**response_load(None))
+    return json_response()
 
 
 @app.route("/api/v1/players")
 def get_players():
     users = list(Players.find({}, {'_id': 0}))
-    return jsonify(**response_load(data={'users': users}))
+    return json_response(data={'users': users})
 
 
 @app.route("/api/v1/players", methods=['POST'])
@@ -57,17 +59,17 @@ def add_player():
     is_valid = players_validator.validate(json_request)
     if is_valid:
         if Players.find_one({'player_id': json_request['player_id']}) is not None:
-            return jsonify(**response_load(status="error", reason="Player already exists")), 500
+            return json_response(status="error", reason="Player already exists", code=500)
         Players.insert_one(json_request)
-        return jsonify(**response_load())
+        return json_response()
     else:
-        return jsonify(**response_load(reason="Validation errors", data=players_validator.errors, status="error")), 400
+        return json_response(reason="Validation Error", data=players_validator.errors, status="error", code=400)
 
 
 @app.route("/api/v1/matches")
 def get_matches():
     matches = list(Matches.find({}, {'_id': 0}))
-    return jsonify(**response_load(data={'matches': matches}))
+    return json_response(data={'matches': matches})
 
 
 @app.route("/api/v1/players/<player_id>")
@@ -75,16 +77,16 @@ def get_player(player_id):
     user = Players.find_one({'player_id': player_id}, {'_id': 0})
 
     if user is None:
-        res = {'users': []}
+        return json_response(data={}, code=400, status="error", reason="User Not Found")
     else:
-        res = {'users': [user]}
-    return jsonify(**response_load(res))
+        res = user
+        return json_response(res)
 
 
 @app.route("/api/v1/players/<player_id>/matches", methods=['GET'])
 def get_player_matches(player_id):
     matches = list(Matches.find({'participants.player_id': {'$in': [player_id]}}, {'_id': 0}))
-    return jsonify(**response_load(data={'matches': matches}))
+    return json_response(data={'matches': matches})
 
 
 @app.route("/api/v1/probability", methods=['POST'])
@@ -95,15 +97,15 @@ def get_probability():
     p2 = json_request.get('player_id_2')
 
     if p1 is None or p2 is None:
-        return jsonify(**response_load(status="error", reason="Need both player_id_1 and player_id_2")), 400
+        return json_response(status="error", reason="Need both player_id_1 and player_id_2", code=400)
 
     player1 = Player(Players.find_one({'player_id': p1}))
     player2 = Player(Players.find_one({'player_id': p2}))
 
     if player1 is None or player2 is None:
-        return jsonify(**response_load(status="error", reason="Need both player_id_1 and player_id_2")), 400
+        return json_response(status="error", reason="Need both player_id_1 and player_id_2", code=400)
 
-    return jsonify(**response_load(data=pairwise_probability_calculation(player1, player2)))
+    return json_response(data=pairwise_probability_calculation(player1, player2))
 
 
 if __name__ == '__main__':
