@@ -10,7 +10,7 @@ def pairwise_probability_calculation(p_a, p_b):
 
     return {
         p_a.player_id: {
-            'win': float(win_p_a),
+            'win': win_p_a,
             'lose': lose_p_a
         },
         p_b.player_id: {
