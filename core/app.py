@@ -1,12 +1,11 @@
-from flask import Flask, Response, Request, request, Blueprint
+from flask import Flask, request
 from flask.json import jsonify
 from mongokit import Connection
 from mongokit.schema_document import SchemaDocumentError
-
 from config import DB_HOST, DB_NAME, DB_PORT
 from models.match import Match
 from models.player import Player
-from modules.probability import pairwise_probability_calculation
+from modules.probability import pairwise_probability_calculation as win_probability
 
 app = Flask(__name__)
 app.config.from_pyfile('config.py')
@@ -68,6 +67,7 @@ def get_matches():
 @app.route("/api/v1/players/<player_id>")
 def get_player(player_id):
     user = db.Player.find_one({'player_id': player_id})
+    print type(user)
 
     if user is None:
         return json_response(data={}, code=400, status="error", reason="User Not Found")
@@ -98,7 +98,7 @@ def get_probability():
     if player1 is None or player2 is None:
         return json_response(status="error", reason="Need valid player_id_1 and player_id_2", code=400)
 
-    return json_response(data=pairwise_probability_calculation(player1, player2))
+    return json_response(data=win_probability(player1, player2))
 
 
 def ensure_indexes():
@@ -110,4 +110,5 @@ def ensure_indexes():
 if __name__ == '__main__':
     db = Connection(host=DB_HOST, port=DB_PORT)
     db.register([Player, Match])
+    ensure_indexes()
     app.run()
