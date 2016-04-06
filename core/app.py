@@ -1,28 +1,15 @@
 from flask import Flask, Response, Request, request, Blueprint
 from flask.json import jsonify
-from pymongo import MongoClient
-from cerberus import Validator
-from models.player import PlayerSchema
-from models.match import MatchSchema
+from mongokit import Connection
+from mongokit.schema_document import SchemaDocumentError
+
+from config import DB_HOST, DB_NAME, DB_PORT
+from models.match import Match
+from models.player import Player
 from modules.probability import pairwise_probability_calculation
 
 app = Flask(__name__)
 app.config.from_pyfile('config.py')
-
-db = MongoClient(app.config.get('DB_HOST', 'localhost'),
-                 app.config.get('DB_PORT', 27017))[app.config.get('DATABASE', 'ladder')]
-
-Players = db['players']
-Matches = db['matches']
-
-players_validator = Validator(PlayerSchema)
-matches_validator = Validator(MatchSchema)
-
-
-class Player(object):
-    def __init__(self, d):
-        for key, val in d.iteritems():
-            setattr(self, key, val)
 
 
 def json_response(data=None, status="success", reason=None, code=200):
@@ -49,32 +36,38 @@ def hello():
 
 @app.route("/api/v1/players")
 def get_players():
-    users = list(Players.find({}, {'_id': 0}))
+    users = list(db.Player.find({}, {'_id': 0}))
     return json_response(data={'users': users})
 
 
 @app.route("/api/v1/players", methods=['POST'])
 def add_player():
     json_request = request.get_json()
-    is_valid = players_validator.validate(json_request)
-    if is_valid:
-        if Players.find_one({'player_id': json_request['player_id']}) is not None:
-            return json_response(status="error", reason="Player already exists", code=500)
-        Players.insert_one(json_request)
+    player = db.Player()
+
+    for key, val in json_request.iteritems():
+        if key not in player.viewkeys():
+            continue
+        player[key] = val
+    try:
+        player.validate()
+        if db.Player.find_one({'player_id': json_request['player_id']}) is not None:
+            return json_response(status="error", reason="Player already exists", code=400)
+        player.save()
         return json_response()
-    else:
-        return json_response(reason="Validation Error", data=players_validator.errors, status="error", code=400)
+    except SchemaDocumentError, e:
+        return json_response(reason="Validation Error", data=str(e), status="error", code=400)
 
 
 @app.route("/api/v1/matches")
 def get_matches():
-    matches = list(Matches.find({}, {'_id': 0}))
+    matches = list(db.Match.find({}, {'_id': 0}))
     return json_response(data={'matches': matches})
 
 
 @app.route("/api/v1/players/<player_id>")
 def get_player(player_id):
-    user = Players.find_one({'player_id': player_id}, {'_id': 0})
+    user = db.Player.find_one({'player_id': player_id}, {'_id': 0})
 
     if user is None:
         return json_response(data={}, code=400, status="error", reason="User Not Found")
@@ -85,7 +78,7 @@ def get_player(player_id):
 
 @app.route("/api/v1/players/<player_id>/matches", methods=['GET'])
 def get_player_matches(player_id):
-    matches = list(Matches.find({'participants.player_id': {'$in': [player_id]}}, {'_id': 0}))
+    matches = list(db.Match.find({'participants.player_id': {'$in': [player_id]}}, {'_id': 0}))
     return json_response(data={'matches': matches})
 
 
@@ -99,14 +92,22 @@ def get_probability():
     if p1 is None or p2 is None:
         return json_response(status="error", reason="Need both player_id_1 and player_id_2", code=400)
 
-    player1 = Player(Players.find_one({'player_id': p1}))
-    player2 = Player(Players.find_one({'player_id': p2}))
+    player1 = db.Player.find_one({'player_id': p1})
+    player2 = db.Player.find_one({'player_id': p2})
 
     if player1 is None or player2 is None:
-        return json_response(status="error", reason="Need both player_id_1 and player_id_2", code=400)
+        return json_response(status="error", reason="Need valid player_id_1 and player_id_2", code=400)
 
     return json_response(data=pairwise_probability_calculation(player1, player2))
 
 
+def ensure_indexes():
+    # unfortunately, mongokit does NOT do indexes automatically -- false advertising
+    db.Player.generate_index(db[DB_NAME][Player.__collection__])
+    db.Match.generate_index(db[DB_NAME][Match.__collection__])
+
+
 if __name__ == '__main__':
+    db = Connection(host=DB_HOST, port=DB_PORT)
+    db.register([Player, Match])
     app.run()

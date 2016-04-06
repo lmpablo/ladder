@@ -1,30 +1,30 @@
-PlayerSchema = {
-    'player_id': {
-        'type': 'string',
-        'empty': False,
-        'required': True
-    },
-    'first_name': {
-        'type': 'string'
-    },
-    'rating': {
-        'type': 'number'
-    },
-    'k_factor': {
-        'type': 'integer'
-    },
-    'basic_stats': {
-        'type': 'dict',
-        'schema': {
-            'last_game_played': {
-                'type': 'datetime'
-            },
-            'num_games_played': {
-                'type': 'integer'
-            }
-        }
-    },
-    'other_stats': {
-        'type': 'dict'
+from mongokit import Document
+from config import DB_NAME
+import datetime
+
+
+class Player(Document):
+    __database__ = DB_NAME
+    __collection__ = 'players'
+    use_dot_notation = True
+
+    structure = {
+        'player_id': basestring,
+        'first_name': basestring,
+        'rating': float,
+        'k_factor': int,
+        'last_game_played': datetime.datetime,
+        'num_games_played': int
     }
-}
+
+    required_fields = ['player_id']
+    default_values = {
+        'num_games_played': 0
+    }
+
+    indexes = [
+        {
+            'fields': ['player_id'],
+            'unique': True
+        }
+    ]
