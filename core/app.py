@@ -36,8 +36,8 @@ def hello():
 
 @app.route("/api/v1/players")
 def get_players():
-    users = list(db.Player.find({}, {'_id': 0}))
-    return json_response(data={'users': users})
+    users = list(db.Player.find())
+    return json_response(data={'users': [u.to_json_type() for u in users]})
 
 
 @app.route("/api/v1/players", methods=['POST'])
@@ -67,19 +67,19 @@ def get_matches():
 
 @app.route("/api/v1/players/<player_id>")
 def get_player(player_id):
-    user = db.Player.find_one({'player_id': player_id}, {'_id': 0})
+    user = db.Player.find_one({'player_id': player_id})
 
     if user is None:
         return json_response(data={}, code=400, status="error", reason="User Not Found")
     else:
         res = user
-        return json_response(res)
+        return json_response(res.to_json_type())
 
 
 @app.route("/api/v1/players/<player_id>/matches", methods=['GET'])
 def get_player_matches(player_id):
-    matches = list(db.Match.find({'participants.player_id': {'$in': [player_id]}}, {'_id': 0}))
-    return json_response(data={'matches': matches})
+    matches = list(db.Match.find({'participants.player_id': {'$in': [player_id]}}))
+    return json_response(data={'matches': [m.to_json_type() for m in matches]})
 
 
 @app.route("/api/v1/probability", methods=['POST'])
