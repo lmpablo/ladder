@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block body %}
+
+<h2>Matches</h2>
+<ul>
+    {% for match in matches.data.matches %}
+    <li>
+        <h3>Player {{match.participants[0].player_id }} vs Player {{match.participants[1].player_id }} </h3>
+        <p>{{match.timestamp}}</p>
+        {% if match.winner %}
+        <p>Winner: Player {{match.winner}}</p>
+        {% endif %}
+    </li>
+    {% else %}
+    <li>
+        <em>Unbelievable.  No matches here so far</em>
+    </li>
+    {% endfor %}
+</ul>
+
+{% endblock %}
