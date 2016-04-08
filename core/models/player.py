@@ -28,3 +28,11 @@ class Player(Document):
             'unique': True
         }
     ]
+
+    def reset_all_ratings(self):
+        for player in self.connection.Player.find():
+            player.rating = 1000.0
+            player.save()
+
+    def exists(self, player_id):
+        return self.connection.Player.find_one({'player_id': player_id}) is not None

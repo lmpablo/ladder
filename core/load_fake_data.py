@@ -1,5 +1,6 @@
 from mongokit import Connection
 from models.match import Match
+from models.rating import Rating
 from models.player import Player
 from config import DB_HOST, DB_NAME, DB_PORT
 import argparse
@@ -31,9 +32,8 @@ def insert_players(num_players=20):
         player = connection.Player()
         player.player_id = name
         player.first_name = fname.capitalize()
-        # TODO: don't randomize rating, actually calculate it
-        player.rating = float(random.randint(900, 1500))
-        player.k_factor = random.randint(8, 15)
+        player.rating = 1000.0
+        player.k_factor = 15
         player.save()
 
     return ['{}{}'.format(fname, lname) for fname, lname in names[:num_players]]
@@ -96,12 +96,13 @@ if __name__ == '__main__':
 
     # load config
     connection = Connection(host=DB_HOST, port=DB_PORT)
-    connection.register([Player, Match])
+    connection.register([Player, Match, Rating])
 
     if args.force:
         print "Force dropping collections"
         connection[DB_NAME].drop_collection(Player.__collection__)
         connection[DB_NAME].drop_collection(Match.__collection__)
+        connection[DB_NAME].drop_collection(Rating.__collection__)
 
     names_inserted = insert_players(args.num_players)
     insert_matches(names_inserted, args.num_matches)

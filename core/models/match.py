@@ -35,6 +35,9 @@ class Match(Document):
         {
             'fields': ['participants.player_id'],
             'check': False
+        },
+        {
+            'fields': ['timestamp']
         }
     ]
 
@@ -42,3 +45,7 @@ class Match(Document):
         super(Match, self).validate(*args, **kwargs)
         for participant in self['participants']:
             assert participant['player_id'], "player_id is required: {}".format(participant)
+
+    def get_winner(self):
+        return self.connection.Player.find_one({'player_id': self['winner']})
+
