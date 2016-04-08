@@ -3,13 +3,16 @@ from flask.json import jsonify
 from mongokit import Connection
 from mongokit.schema_document import SchemaDocumentError
 from config import DB_HOST, DB_NAME, DB_PORT
+from modules.exceptions import PlayerNotFoundException
+from modules.elo import calculate_and_update
+from models.metadata import Metadata
+from models.rating import Rating
 from models.match import Match
 from models.player import Player
 from modules.probability import pairwise_probability_calculation as win_probability
+from dateutil import parser
 import json
 
-import datetime
-from dateutil import parser
 
 app = Flask(__name__, template_folder='../frontend/')
 app.config.from_pyfile('config.py')
@@ -28,10 +31,6 @@ def json_response(data=None, status="success", reason=None, code=200):
     return jsonify(**response_object), code
 
 
-def missing(field_list):
-    return "Missing the following required fields: {}".format(', '.join(field_list))
-
-
 @app.route("/")
 def index():
     return render_template('index.html')
@@ -42,6 +41,7 @@ def matches_view():
     # TODO: Access the API instead of the function
     matches = json.loads(get_matches()[0].get_data())
     return render_template('matches/list.html', matches=matches)
+
 
 # Players
 
@@ -55,10 +55,12 @@ def get_player(player_id):
         res = user
         return json_response(res.to_json_type())
 
+
 @app.route("/api/v1/players")
 def get_players():
     users = list(db.Player.find())
     return json_response(data={'users': [u.to_json_type() for u in users]})
+
 
 @app.route("/api/v1/players", methods=['POST'])
 def add_player():
@@ -71,19 +73,19 @@ def add_player():
         player[key] = val
     try:
         player.validate()
-        if db.Player.find_one({'player_id': json_request['player_id']}) is not None:
+        if db.Player.exists(player.player_id):
             return json_response(status="error", reason="Player already exists", code=400)
         player.save()
         return json_response()
     except SchemaDocumentError, e:
         return json_response(reason="Validation Error", data=str(e), status="error", code=400)
 
+
 # Matches
 
 @app.route("/api/v1/matches/<match_id>")
 def get_match(match_id):
     match = db.Match.find_one({'match_id': match_id})
-    print type(match)
 
     if match is None:
         return json_response(data={}, code=400, status="error", reason="Match Not Found")
@@ -91,10 +93,12 @@ def get_match(match_id):
         res = match
         return json_response(res.to_json_type())
 
+
 @app.route("/api/v1/matches")
 def get_matches():
     matches = list(db.Match.find({}, {'_id': 0}))
     return json_response(data={'matches': matches})
+
 
 @app.route("/api/v1/matches", methods=['POST'])
 def add_match():
@@ -113,17 +117,98 @@ def add_match():
         if db.Match.find_one({'match_id': json_request['match_id']}) is not None:
             return json_response(status="error", reason="Match already exists", code=400)
         match.save()
+
+        metadata = db.Metadata.find_one()
+        if metadata is None:
+            metadata = db.Metadata()
+
+        if metadata.matches.last_match_date > match.timestamp:
+            force_recalculate_ratings()
+        else:
+            calculate_match_ratings(match)
+            metadata.matches.last_match_date = match.timestamp
+            metadata.save()
+
         return json_response()
     except SchemaDocumentError, e:
         return json_response(reason="Validation Error", data=str(e), status="error", code=400)
 
 
 # Player <-> Match
-@app.route("/api/v1/players/<player_id>/matches", methods=['GET'])
+
+@app.route("/api/v1/players/<player_id>/matches")
 def get_player_matches(player_id):
     matches = list(db.Match.find({'participants.player_id': {'$in': [player_id]}}))
     return json_response(data={'matches': [m.to_json_type() for m in matches]})
 
+
+# Rating
+
+@app.route("/api/v1/ratings")
+def get_all_ratings():
+    """
+    Returns all historical ratings for all players
+    """
+    ratings = list(db.Rating.find())
+    return json_response(data={'ratings': [r.to_json_type() for r in ratings]})
+
+
+@app.route("/api/v1/ratings", methods=['PUT'])
+def force_recalculate_ratings():
+    """
+    Clears the entire list of ratings and re-calculates everything from scratch
+    """
+    db[DB_NAME].drop_collection(Rating.__collection__)
+    db.Player.reset_all_ratings()
+
+    counter = 0
+    for match in db.Match.find().sort('timestamp', 1):
+        try:
+            calculate_match_ratings(match)
+            counter += 1
+        except PlayerNotFoundException:
+            return json_response(status="error", reason="One of the matches has an invalid player", code=500)
+
+    return json_response(data="{} matches processed".format(counter))
+
+
+# Player <-> Rating
+
+@app.route("/api/v1/players/<player_id>/ratings")
+def get_player_ratings(player_id):
+    _sort_order = request.args.get('sort', 'ascending')
+    sort_order = 1 if _sort_order == 'ascending' else -1
+    ratings = list(db.Rating.find({'player_id': player_id}).sort('timestamp', sort_order))
+    return json_response(data={'ratings': [r.to_json_type() for r in ratings]})
+
+
+# Rankings
+
+@app.route("/api/v1/rankings")
+def get_rankings():
+    limit = int(request.args.get('top', '10'))
+    player_ratings = {}
+    for rating in db.Rating.find().sort('timestamp', -1):
+        if rating.player_id not in player_ratings:
+            rating_obj = {
+                'player_id': rating.player_id,
+                'rating': rating.rating
+            }
+            player_ratings[rating.player_id] = rating_obj
+
+    sorted_data = sorted([player_ratings[player] for player in player_ratings],
+                         key=lambda doc: doc['rating'],
+                         reverse=True)
+
+    with_ranking = []
+    for index, rank in enumerate(sorted_data):
+        rank['rank'] = index + 1
+        with_ranking.append(rank)
+
+    return json_response(data={'rankings': with_ranking[:limit]})
+
+
+# Misc
 
 @app.route("/api/v1/probability", methods=['POST'])
 def get_probability():
@@ -144,14 +229,43 @@ def get_probability():
     return json_response(data=win_probability(player1, player2))
 
 
+def calculate_match_ratings(match):
+    winner_id = match.winner
+    winner = loser = None
+    for participant in match.participants:
+        player = db.Player.find_one({'player_id': participant['player_id']})
+        if player is None:
+            raise PlayerNotFoundException
+        if player.player_id == winner_id:
+            winner = player
+        else:
+            loser = player
+
+    calculate_and_update(winner, loser)
+    for player in [winner, loser]:
+        db.Rating({
+            'player_id': player.player_id,
+            'rating': player.rating,
+            'k_factor': player.k_factor,
+            'match_id': match.match_id,
+            'timestamp': match.timestamp
+        }).save()
+        # Todo: Update k_factor at this point
+
+    metadata = db.Metadata.find_one()
+    metadata.ratings.last_date_processed = match.timestamp
+    metadata.save()
+
+
 def ensure_indexes():
     # unfortunately, mongokit does NOT do indexes automatically -- false advertising
     db.Player.generate_index(db[DB_NAME][Player.__collection__])
     db.Match.generate_index(db[DB_NAME][Match.__collection__])
+    db.Rating.generate_index(db[DB_NAME][Rating.__collection__])
 
 
 if __name__ == '__main__':
     db = Connection(host=DB_HOST, port=DB_PORT)
-    db.register([Player, Match])
+    db.register([Player, Match, Rating, Metadata])
     ensure_indexes()
     app.run()

@@ -30,6 +30,6 @@ class Rating(Document):
             'fields': ['player_id']
         },
         {
-            'fields': ['player_id', 'rating']
+            'fields': ['player_id', 'timestamp']
         }
     ]

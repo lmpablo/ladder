@@ -56,7 +56,7 @@ def calculate_and_update(winner, loser, draw=False, point_diff=None):
         point_diff = None
     else:
         winner_score = 1.0
-        loser_score = 1.0
+        loser_score = 0.0
     winner_update, loser_update = calculate(winner, loser,
                                             winner_score, loser_score,
                                             point_diff)
