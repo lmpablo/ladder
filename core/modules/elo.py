@@ -22,7 +22,7 @@ def __calculate_decay_factor(player, threshold=14):
     if days_since < threshold:
         return 1.0
     else:
-        return 1.0 - (math.log((days_since / 14.0) + 1.0) * 0.05)
+        return 1.0 - (math.log1p(days_since / 14.0) * 0.05)
 
 
 def calculate(winner, loser, winner_score=1.0, loser_score=0.0, point_diff=None):
