@@ -1,4 +1,5 @@
 import math
+import datetime
 
 
 def __calculate_expected(a, b, norm=400.0):
@@ -11,6 +12,17 @@ def __calculate_expected(a, b, norm=400.0):
     q_b = b.rating / norm
 
     return q_a / (q_a + q_b)
+
+
+def __calculate_decay_factor(player, threshold=14):
+    """
+    :type player: models.player.Player
+    """
+    days_since = (datetime.datetime.today() - player.last_game_played).days
+    if days_since < threshold:
+        return 1.0
+    else:
+        return 1.0 - (math.log((days_since / 14.0) + 1.0) * 0.05)
 
 
 def calculate(winner, loser, winner_score=1.0, loser_score=0.0, point_diff=None):
@@ -66,3 +78,13 @@ def calculate_and_update(winner, loser, draw=False, point_diff=None):
 
     winner.save()
     loser.save()
+
+
+def apply_decay(player):
+    """
+    Calculates the player's rating after not playing for a while
+
+    :type player: models.player.Player
+    """
+    player.rating = (player.rating * __calculate_decay_factor(player))
+    player.save()
