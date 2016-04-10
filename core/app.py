@@ -146,6 +146,25 @@ def add_match():
     except SchemaDocumentError, e:
         return json_response(reason="Validation Error", data=str(e), status="error", code=400)
 
+@app.route("/api/v1/matches/delete", methods=['POST'])
+def delete_match():
+    json_request = request.get_json()
+    #TODO: AUTH
+    if 'match_id' not in json_request:
+        return json_response(data={}, reason="Missing match_id param", status="error", code=400)
+    match = db.Match.find_one({'match_id': json_request['match_id']})
+    if match:
+        match.delete()
+        if 'recalculate_ratings'in json_request and not json_request['recalculate_ratings']:
+            word = "without"
+        else:
+            force_recalculate_ratings()
+            word = "with"
+        return json_response(data={}, reason="Successfully deleted match {} recalculation of ratings".format(word))
+    else:
+        return json_response(data={}, reason="Match does not exist", status="error", code=400)
+
+
 
 # Player <-> Match
 
@@ -271,7 +290,6 @@ def calculate_match_ratings(match):
         }).save()
         # Todo: Update k_factor at this point
 
-    print("UPDATING RATINGS LAST DATE PROCESSED")
     metadata = db.Metadata.find_one()
     metadata.ratings.last_date_processed = match.timestamp
     metadata.save()
