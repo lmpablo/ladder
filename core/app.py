@@ -58,8 +58,8 @@ def get_player(player_id):
 
 @app.route("/api/v1/players")
 def get_players():
-    users = list(db.Player.find())
-    return json_response(data={'users': [u.to_json_type() for u in users]})
+    players = list(db.Player.find())
+    return json_response(data={'players': [u.to_json_type() for u in players]})
 
 
 @app.route("/api/v1/players", methods=['POST'])
@@ -70,6 +70,8 @@ def add_player():
     for key, val in json_request.iteritems():
         if key not in player.viewkeys():
             continue
+        if key == 'rating':
+            val = float(val)
         player[key] = val
     try:
         player.validate()
