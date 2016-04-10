@@ -12,6 +12,7 @@ from models.player import Player
 from modules.probability import pairwise_probability_calculation as win_probability
 from dateutil import parser
 import json
+import pytz
 
 
 app = Flask(__name__, template_folder='../frontend/')
@@ -110,28 +111,38 @@ def add_match():
     for key, val in json_request.iteritems():
         if key not in match.viewkeys():
             continue
+        # TODO: Make less hacky
         if key == "timestamp":
-            match[key] = parser.parse(val)
+            match[key] = parser.parse(val, ignoretz=True)
         else:
             match[key] = val
     try:
         match.validate()
         if db.Match.find_one({'match_id': json_request['match_id']}) is not None:
             return json_response(status="error", reason="Match already exists", code=400)
-        match.save()
 
         metadata = db.Metadata.find_one()
         if metadata is None:
             metadata = db.Metadata()
+            metadata.matches.last_match_date = match.timestamp
+            metadata.save()
 
         if metadata.matches.last_match_date > match.timestamp:
             force_recalculate_ratings()
         else:
             calculate_match_ratings(match)
-            metadata.matches.last_match_date = match.timestamp
-            metadata.save()
 
+        # We have to re-read metadata from db as it was modified during either force_recalculate_ratings or
+        # calculate_match_ratings
+        metadata = db.Metadata.find_one()
+        metadata.matches.last_match_date = match.timestamp
+        metadata.save()
+
+        match.save()
         return json_response()
+
+    except TypeError, e:
+        return json_response(data=str(e), reason="Type Error", status="error", code=400)
     except SchemaDocumentError, e:
         return json_response(reason="Validation Error", data=str(e), status="error", code=400)
 
@@ -164,12 +175,18 @@ def force_recalculate_ratings():
     db.Player.reset_all_ratings()
 
     counter = 0
+    last_match = None
     for match in db.Match.find().sort('timestamp', 1):
         try:
             calculate_match_ratings(match)
             counter += 1
+            last_match = match
         except PlayerNotFoundException:
             return json_response(status="error", reason="One of the matches has an invalid player", code=500)
+    # Update last match date in metadata to last match processed
+    metadata = db.Metadata.find_one()
+    metadata.matches.last_match_date = last_match.timestamp
+    metadata.save()
 
     return json_response(data="{} matches processed".format(counter))
 
@@ -254,6 +271,7 @@ def calculate_match_ratings(match):
         }).save()
         # Todo: Update k_factor at this point
 
+    print("UPDATING RATINGS LAST DATE PROCESSED")
     metadata = db.Metadata.find_one()
     metadata.ratings.last_date_processed = match.timestamp
     metadata.save()

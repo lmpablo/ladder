@@ -19,7 +19,9 @@ class Player(Document):
 
     required_fields = ['player_id']
     default_values = {
-        'num_games_played': 0
+        'num_games_played': 0,
+        'rating': 1000.0,
+        'k_factor': 12
     }
 
     indexes = [

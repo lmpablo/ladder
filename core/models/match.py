@@ -21,10 +21,12 @@ class Match(Document):
 
     required_fields = ['match_id',
                        'timestamp',
-                       'participants']
+                       'winner'
+                       ]
 
     default_values = {
-        'match_type': 'ping pong'
+        'match_type': 'ping pong',
+        'timestamp': datetime.datetime.now()
     }
 
     indexes = [
@@ -42,9 +44,11 @@ class Match(Document):
     ]
 
     def validate(self, *args, **kwargs):
-        super(Match, self).validate(*args, **kwargs)
         for participant in self['participants']:
-            assert participant['player_id'], "player_id is required: {}".format(participant)
+            assert participant['player_id'], "player_id for participans is required: {}".format(participant)
+            if 'score' not in participant:
+                participant['score'] = -1
+        super(Match, self).validate(*args, **kwargs)
 
     def get_winner(self):
         return self.connection.Player.find_one({'player_id': self['winner']})

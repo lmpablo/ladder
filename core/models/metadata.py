@@ -1,6 +1,7 @@
 from mongokit import Document
 from config import DB_NAME
 import datetime
+import pytz
 
 
 class Metadata(Document):
@@ -19,5 +20,6 @@ class Metadata(Document):
 
     required_fields = []
     default_values = {
-        'ratings.last_date_processed': datetime.datetime(1970, 1, 1)
+        'ratings.last_date_processed': datetime.datetime(1970, 1, 1),
+        'matches.last_match_date': datetime.datetime(1970, 1, 1)
     }
