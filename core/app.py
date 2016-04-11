@@ -9,6 +9,7 @@ from models.metadata import Metadata
 from models.rating import Rating
 from models.match import Match
 from models.player import Player
+from modules.request import Request
 from modules.probability import pairwise_probability_calculation as win_probability
 from dateutil import parser
 import json
@@ -40,9 +41,17 @@ def index():
 @app.route("/matches")
 def matches_view():
     # TODO: Access the API instead of the function
+    print("here")
+    matcheees = request.get("/matches")
+    print(matcheees)
     matches = json.loads(get_matches()[0].get_data())
     return render_template('matches/list.html', matches=matches)
 
+@app.route("/players")
+def players_view():
+    # TODO: Access the API instead of the function
+    players = json.loads(get_players()[0].get_data())
+    return render_template('players/list.html', players=players)
 
 # Players
 
@@ -99,6 +108,7 @@ def get_match(match_id):
 
 @app.route("/api/v1/matches")
 def get_matches():
+    print("Getting matches")
     matches = list(db.Match.find({}, {'_id': 0}))
     return json_response(data={'matches': matches})
 
@@ -306,4 +316,5 @@ if __name__ == '__main__':
     db = Connection(host=DB_HOST, port=DB_PORT)
     db.register([Player, Match, Rating, Metadata])
     ensure_indexes()
+    request = Request()
     app.run()
