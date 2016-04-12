@@ -289,6 +289,8 @@ def calculate_match_ratings(match):
             'timestamp': match.timestamp
         }).save()
         # Todo: Update k_factor at this point
+        player.num_games_played += 1
+        player.save()
 
     metadata = db.Metadata.find_one()
     metadata.ratings.last_date_processed = match.timestamp
