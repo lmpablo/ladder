@@ -1,3 +1,5 @@
+import uuid
+
 from mongokit import Document
 from config import DB_NAME
 import datetime
@@ -26,7 +28,8 @@ class Match(Document):
 
     default_values = {
         'match_type': 'ping pong',
-        'timestamp': datetime.datetime.now()
+        'timestamp': datetime.datetime.now(),
+        'match_id': str(uuid.uuid4())
     }
 
     indexes = [

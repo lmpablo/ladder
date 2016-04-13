@@ -11,6 +11,7 @@ class Player(Document):
     structure = {
         'player_id': basestring,
         'first_name': basestring,
+        'slack_name': basestring,
         'rating': float,
         'k_factor': int,
         'last_game_played': datetime.datetime,
@@ -34,6 +35,7 @@ class Player(Document):
     def reset_all_ratings(self):
         for player in self.connection.Player.find():
             player.rating = 1000.0
+            player.num_games_played = 0
             player.save()
 
     def exists(self, player_id):

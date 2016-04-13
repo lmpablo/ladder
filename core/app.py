@@ -1,3 +1,5 @@
+import uuid
+
 from flask import Flask, request, render_template
 from flask.json import jsonify
 from mongokit import Connection
@@ -117,9 +119,8 @@ def add_match():
         else:
             match[key] = val
     try:
+        match.match_id = str(uuid.uuid4())
         match.validate()
-        if db.Match.find_one({'match_id': json_request['match_id']}) is not None:
-            return json_response(status="error", reason="Match already exists", code=400)
 
         metadata = db.Metadata.find_one()
         if metadata is None:
