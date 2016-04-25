@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>ladder leaderboard</title>
+  <link rel="stylesheet" href="/css/foundation.min.css">
+  <link rel="stylesheet" href="/css/app.css">
+</head>
+<body>
+  <div class="banner-container">
+    <div class="row align-middle">
+      <div id="profile-container" class="column small-12">
+        <div id="profile" class="row align-middle">
+          <div class="columns small-2">
+            <img id="profile-image" src="http://dummyimage.com/150" alt="" class="profile-image" />
+          </div>
+          <div class="columns small-3 text-left">
+            <span id="profile-name">@profilename</span><br>
+            <span id="real-name" class="sub-head">Real Name</span>
+          </div>
+          <div class="columns small-7 text-right">
+            <span id="profile-rank">--</span><br>
+            <span id="profile-rating" class="sub-head">(1000)</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="row">
+    <div class="columns">
+      <div class="row">
+        <div class="columns">
+          <h1>Match History</h1>
+        </div>
+      </div>
+      <div id="match-data">
+        <div class="row">
+          <div class="columns small-8">
+            <div class="row align-middle lb-header text-center right-spacer">
+              <div class="columns small-3">Result</div>
+              <div class="columns small-3">Opponent</div>
+              <div class="columns small-3">Scores</div>
+              <div class="columns small-3">Date</div>
+            </div>
+          </div>
+          <div class="columns small-4">
+            <div class="row align-middle match-counts">
+              <div class="columns small-4 text-center">
+                <span class="win count">0</span><br>
+                <span class="match-counts label">wins</span>
+              </div>
+              <div class="columns small-4 text-center">
+                <span class="loss count">0</span><br>
+                <span class="match-counts label">losses</span>
+              </div>
+              <div class="columns small-4 text-center">
+                <span class="draw count">0</span><br>
+                <span class="match-counts label">losses</span>
+              </div>
+            </div>
+            <div class="row align-middle"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script src="/js/vendor/jquery.js"></script>
+  <script>
+    $(function(){
+      $.get("/api/v1/players/{{ player_id }}", function(data) {
+        var user = data.data;
+        $("img#profile-image").attr("src", user.profile_picture);
+        $("#profile-name").text("@" + user.slack_name);
+        $("#real-name").text(user.real_name);
+        $("#profile-rating").text("(" + Number(user.rating).toFixed(0) + ")");
+
+        var wins = parseInt(user.num_games_won);
+        var losses = parseInt(user.num_games_played) - wins;
+        $("#match-data .match-counts .win").text(wins);
+        $("#match-data .match-counts .loss").text(losses);
+      })
+
+      $.get("/api/v1/rankings?top=-1", function(data){
+        var rankings = data.data.rankings;
+        var userData = ""
+        for (var i = 0, len = rankings.length; i < len; i++) {
+          var r = rankings[i];
+          if (r.player_id == "{{ player_id }}") {
+            userData = r;
+          }
+        }
+        if (userData) {
+          $("#profile-rank").text("#" + userData.rank);
+        }
+      });
+
+      $.get("/api/v1/players/U0J728C6S/matches?sort=-1&limit=10", function(data) {
+        var matches = data.data.matches;
+        console.log(matches)
+      })
+    })
+  </script>
+</body>
+</html>

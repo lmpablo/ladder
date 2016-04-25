@@ -1,0 +1,96 @@
+* {
+  font-family: "GT Walsheim", "Avenir Next", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  color: #1C3A5F;
+}
+
+html, body {
+  background: #F2F0EA;
+  font-weight: 100;
+}
+
+.banner-container {
+  background: #3081E8;
+  margin-bottom: 30px;
+  color: white;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: "GT Walsheim", "Avenir Next", "Helvetica Neue", Helvetica, Arial, sans-serif;
+}
+
+h1 {
+  font-size: 42px;
+  letter-spacing: -1px;
+  font-weight: 500;
+}
+
+#leaderboard, #match-data {
+  margin-bottom: 50px;
+}
+
+#profile-container {
+  color: white;
+}
+
+#profile {
+  height: 200px;
+}
+
+#profile-image {
+  border: solid 5px white;
+}
+
+#profile-name {
+  font-size: 42px;
+  color: #FFFFFF;
+}
+
+#profile-rank {
+  font-size: 72px;
+  color: white;
+}
+
+.sub-head {
+  font-family: FFMetaSerifPro-BookItalic;
+  font-size: 25px;
+  color: #CBCBCB;
+  top: -15px;
+  position: relative;
+}
+
+.lb-header {
+  background: #FFE37D;
+  height: 75px;
+}
+
+.lb-row {
+  height: 70px;
+  background: white;
+  font-size: 16pt;
+}
+
+.lb-link {
+  color: #1C3A5F;
+}
+
+.match-counts {
+  height: 200px;
+  background: white;
+}
+
+.match-counts .count {
+  font-weight: 500;
+  font-size: 42px;
+}
+
+.win.count {
+  color: #00B36F;
+}
+
+.loss.count {
+  color: #FF4F00;
+}
+
+.right-spacer {
+  margin-right: 25px !important;
+}

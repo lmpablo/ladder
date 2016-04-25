@@ -1,6 +1,7 @@
 import uuid
 
-from flask import Flask, request, render_template
+import datetime
+from flask import Flask, request, render_template, send_from_directory
 from flask.json import jsonify
 from mongokit import Connection
 from mongokit.schema_document import SchemaDocumentError
@@ -34,9 +35,29 @@ def json_response(data=None, status="success", reason=None, code=200):
     return jsonify(**response_object), code
 
 
+@app.route('/js/<path:path>')
+def send_js(path):
+    return send_from_directory('../frontend/js', path)
+
+
+@app.route('/css/<path:path>')
+def send_css(path):
+    return send_from_directory('../frontend/css', path)
+
+
 @app.route("/")
 def index():
-    return render_template('index.html')
+    return render_template('leaderboard.html')
+
+
+@app.route("/leaderboard")
+def leaderboard():
+    return render_template('leaderboard.html')
+
+
+@app.route("/profile/<player_id>")
+def render_profile(player_id):
+    return render_template('profile.html', player_id=player_id)
 
 
 @app.route("/matches")
@@ -102,7 +123,7 @@ def get_match(match_id):
 @app.route("/api/v1/matches")
 def get_matches():
     matches = list(db.Match.find({}, {'_id': 0}))
-    return json_response(data={'matches': matches})
+    return json_response(data={'matches': [m.to_json_type() for m in matches]})
 
 
 @app.route("/api/v1/matches", methods=['POST'])
@@ -147,6 +168,7 @@ def add_match():
     except SchemaDocumentError, e:
         return json_response(reason="Validation Error", data=str(e), status="error", code=400)
 
+
 @app.route("/api/v1/matches/delete", methods=['POST'])
 def delete_match():
     json_request = request.get_json()
@@ -166,12 +188,21 @@ def delete_match():
         return json_response(data={}, reason="Match does not exist", status="error", code=400)
 
 
-
 # Player <-> Match
 
 @app.route("/api/v1/players/<player_id>/matches")
 def get_player_matches(player_id):
-    matches = list(db.Match.find({'participants.player_id': {'$in': [player_id]}}))
+    limit = int(request.args.get('limit', '0'))
+    sort = int(request.args.get('sort', '1'))
+    _matches = list(db.Match.find({'participants.player_id': {'$in': [player_id]}}).sort('timestamp', sort).limit(limit))
+    matches = []
+    for m in _matches:
+        opp = [p for p in m['participants'] if p['player_id'] != player_id][0]
+        m['opponent'] = opp['player_id']
+        m['scores'] = ':'.join([str(p['score']) for p in m['participants']])
+        del m['participants']
+        matches.append(m)
+
     return json_response(data={'matches': [m.to_json_type() for m in matches]})
 
 
@@ -196,17 +227,18 @@ def force_recalculate_ratings():
 
     counter = 0
     last_match = None
+    metadata = db.Metadata.find_one()
     for match in db.Match.find().sort('timestamp', 1):
         try:
             calculate_match_ratings(match)
             counter += 1
             last_match = match
+
+            # Update last match date in metadata to last match processed
+            metadata.matches.last_match_date = last_match.timestamp
+            metadata.save()
         except PlayerNotFoundException:
             return json_response(status="error", reason="One of the matches has an invalid player", code=500)
-    # Update last match date in metadata to last match processed
-    metadata = db.Metadata.find_one()
-    metadata.matches.last_match_date = last_match.timestamp
-    metadata.save()
 
     return json_response(data="{} matches processed".format(counter))
 
@@ -227,7 +259,7 @@ def get_player_ratings(player_id):
 def get_rankings():
     limit = int(request.args.get('top', '10'))
     player_ratings = {}
-    for rating in db.Rating.find().sort('timestamp', -1):
+    for rating in db.Rating.find().sort('_id', -1):
         if rating.player_id not in player_ratings:
             rating_obj = {
                 'player_id': rating.player_id,
@@ -241,9 +273,15 @@ def get_rankings():
 
     with_ranking = []
     for index, rank in enumerate(sorted_data):
+        player_info = db.Player.find_one({'player_id': rank['player_id']})
+        if player_info:
+            for key in ['slack_name', 'real_name', 'profile_picture', 'num_games_played', 'num_games_won']:
+                rank[key] = player_info[key]
         rank['rank'] = index + 1
         with_ranking.append(rank)
 
+    if limit == -1:
+        return json_response(data={'rankings': with_ranking})
     return json_response(data={'rankings': with_ranking[:limit]})
 
 
@@ -277,6 +315,7 @@ def calculate_match_ratings(match):
             raise PlayerNotFoundException
         if player.player_id == winner_id:
             winner = player
+            winner.num_games_won += 1
         else:
             loser = player
 
@@ -289,12 +328,18 @@ def calculate_match_ratings(match):
             'match_id': match.match_id,
             'timestamp': match.timestamp
         }).save()
-        # Todo: Update k_factor at this point
+        player.last_game_played = match.timestamp
         player.num_games_played += 1
+        if player.num_games_played >= 40:
+            player.k_factor = 8
+
         player.save()
 
     metadata = db.Metadata.find_one()
+    if metadata is None:
+        metadata = db.Metadata()
     metadata.ratings.last_date_processed = match.timestamp
+    metadata.ratings.last_updated = datetime.datetime.now()
     metadata.save()
 
 
@@ -309,4 +354,4 @@ if __name__ == '__main__':
     db = Connection(host=DB_HOST, port=DB_PORT)
     db.register([Player, Match, Rating, Metadata])
     ensure_indexes()
-    app.run()
+    app.run(host='0.0.0.0')

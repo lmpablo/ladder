@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>ladder leaderboard</title>
+  <link rel="stylesheet" href="/css/foundation.min.css">
+  <link rel="stylesheet" href="/css/app.css">
+</head>
+<body>
+  <div class="banner-container">
+    <div class="row align-middle">
+      <div id="profile-container" class="column small-4">ladder</div>
+    </div>
+  </div>
+  <div class="row">
+    <div class="columns">
+      <div class="row">
+        <div class="columns">
+          <h1>Leaderboard</h1>
+        </div>
+      </div>
+      <div id="leaderboard">
+        <div class="row lb-header align-middle text-center">
+          <div class="columns small-2">Rank</div>
+          <div class="columns small-5">Player</div>
+          <div class="columns small-2">Rating</div>
+          <div class="columns small-1">Win %</div>
+          <div class="columns small-2">Games Played</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script src="/js/vendor/jquery.js"></script>
+  <script>
+    $(function(){
+      function buildRow(rank, picture, id, name, rating, percent, numGames) {
+        return '<div class="row lb-row align-middle text-center">' +
+        '<div class="columns small-2">' + rank + '</div>' +
+        '<div class="columns small-2 text-right"><img width="48" src="' + picture +'" alt="" class="profile-image" />' + '</div>' +
+        '<div class="columns small-3 text-left"><a class="lb-link" href="/profile/' + id + '">'+ name +'</a></div>' +
+        '<div class="columns small-2">' + rating + '</div>' +
+        '<div class="columns small-1">' + Number(percent).toFixed(0) + '%</div>' +
+        '<div class="columns small-2">' + numGames + '</div>' +
+        '</div>'
+      }
+
+      $.get("/api/v1/rankings", function(data){
+        var rankings = data.data.rankings;
+        for (var i = 0, len = rankings.length; i < len; i++) {
+          var r = rankings[i];
+          var percent = (r.num_games_won / r.num_games_played) * 100
+          $("#leaderboard").append(buildRow(r.rank, r.profile_picture, r.player_id, "@" + r.slack_name, Number(r.rating).toFixed(0), percent, r.num_games_played))
+        }
+      });
+    })
+  </script>
+</body>
+</html>
