@@ -86,3 +86,4 @@ ENV/
 
 # others
 .idea
+.DS_Store
