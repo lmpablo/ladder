@@ -12,6 +12,7 @@ from models.metadata import Metadata
 from models.rating import Rating
 from models.match import Match
 from models.player import Player
+from models.ranking import Ranking
 from modules.probability import pairwise_probability_calculation as win_probability
 from dateutil import parser
 import json
@@ -227,18 +228,19 @@ def force_recalculate_ratings():
 
     counter = 0
     last_match = None
-    metadata = db.Metadata.find_one()
     for match in db.Match.find().sort('timestamp', 1):
         try:
             calculate_match_ratings(match)
             counter += 1
             last_match = match
 
-            # Update last match date in metadata to last match processed
-            metadata.matches.last_match_date = last_match.timestamp
-            metadata.save()
         except PlayerNotFoundException:
             return json_response(status="error", reason="One of the matches has an invalid player", code=500)
+
+    # Update last match date in metadata to last match processed
+    metadata = db.Metadata.find_one()
+    metadata.matches.last_match_date = last_match.timestamp
+    metadata.save()
 
     return json_response(data="{} matches processed".format(counter))
 
@@ -348,10 +350,11 @@ def ensure_indexes():
     db.Player.generate_index(db[DB_NAME][Player.__collection__])
     db.Match.generate_index(db[DB_NAME][Match.__collection__])
     db.Rating.generate_index(db[DB_NAME][Rating.__collection__])
+    db.Ranking.generate_index(db[DB_NAME][Ranking.__collection__])
 
 
 if __name__ == '__main__':
     db = Connection(host=DB_HOST, port=DB_PORT)
-    db.register([Player, Match, Rating, Metadata])
+    db.register([Player, Match, Rating, Metadata, Ranking])
     ensure_indexes()
     app.run(host='0.0.0.0')
