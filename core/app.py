@@ -199,8 +199,12 @@ def get_player_matches(player_id):
     matches = []
     for m in _matches:
         opp = [p for p in m['participants'] if p['player_id'] != player_id][0]
+        player = db.Player.find_one({'player_id': opp['player_id']})
+        m['opponent_name'] = player.slack_name
         m['opponent'] = opp['player_id']
+        m['result'] = 'W' if player_id == m['winner'] else 'L'
         m['scores'] = ':'.join([str(p['score']) for p in m['participants']])
+        m['timestamp'] = m['timestamp'] + datetime.timedelta(hours=4) # TODO: fix hack for timezone issue
         del m['participants']
         matches.append(m)
 

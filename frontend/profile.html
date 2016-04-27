@@ -36,11 +36,13 @@
       <div id="match-data">
         <div class="row">
           <div class="columns small-8">
-            <div class="row align-middle lb-header text-center right-spacer">
-              <div class="columns small-3">Result</div>
-              <div class="columns small-3">Opponent</div>
-              <div class="columns small-3">Scores</div>
-              <div class="columns small-3">Date</div>
+            <div id="match-history">
+              <div class="row align-middle lb-header text-center right-spacer">
+                <div class="columns small-2">Result</div>
+                <div class="columns small-4">Opponent</div>
+                <div class="columns small-2">Scores</div>
+                <div class="columns small-4">Date</div>
+              </div>
             </div>
           </div>
           <div class="columns small-4">
@@ -55,7 +57,7 @@
               </div>
               <div class="columns small-4 text-center">
                 <span class="draw count">0</span><br>
-                <span class="match-counts label">losses</span>
+                <span class="match-counts label">draws</span>
               </div>
             </div>
             <div class="row align-middle"></div>
@@ -67,6 +69,17 @@
   <script src="/js/vendor/jquery.js"></script>
   <script>
     $(function(){
+      function buildMatchRows(result, opponent, opponentID, score, date) {
+        var resultClass = result == 'W' ? 'win' : 'loss';
+        var daysOfTheWeek = ['Su', 'M', 'T', 'W', 'Th', 'F', 'Sa']
+        return '<div class="row align-middle lb-row lb-row-sm text-center right-spacer">' +
+          '<div class="columns small-2"><span class="' + resultClass +'">' + result + '</span></div>' +
+          '<div class="columns small-4"><a class="lb-link" href="/profile/' + opponentID + '">@' + opponent + '</a></div>' +
+          '<div class="columns small-2">' + score +'</div>' +
+          '<div class="columns small-4">' + date.getFullYear() + "/" + (date.getMonth() + 1) + "/" + date.getDate() + ' (' +  daysOfTheWeek[date.getDay()] + ')</div>' +
+        '</div>'
+      }
+
       $.get("/api/v1/players/{{ player_id }}", function(data) {
         var user = data.data;
         $("img#profile-image").attr("src", user.profile_picture);
@@ -94,9 +107,13 @@
         }
       });
 
-      $.get("/api/v1/players/U0J728C6S/matches?sort=-1&limit=10", function(data) {
+      $.get("/api/v1/players/{{ player_id }}/matches?sort=-1&limit=10", function(data) {
         var matches = data.data.matches;
-        console.log(matches)
+        var matchHistoryDiv = $("#match-history")
+        for (var i = 0, len = matches.length; i < len; i++) {
+          var match = matches[i];
+          matchHistoryDiv.append(buildMatchRows(match.result, match.opponent_name, match.opponent, match.scores, new Date(match.timestamp)))
+        }
       })
     })
   </script>
