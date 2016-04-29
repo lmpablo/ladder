@@ -117,3 +117,15 @@ h1 {
 .right-spacer {
   margin-right: 25px !important;
 }
+
+.bar {
+  height: 10px;
+}
+
+.win-bar {
+  background: #00B36F;
+}
+
+.lose-bar {
+  background: #FF4F00;
+}

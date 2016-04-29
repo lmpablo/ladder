@@ -46,6 +46,10 @@
             </div>
           </div>
           <div class="columns small-4">
+            <div class="row align-middle">
+              <div class="win-bar bar"></div>
+              <div class="lose-bar bar"></div>
+            </div>
             <div class="row align-middle match-counts">
               <div class="columns small-4 text-center">
                 <span class="win count">0</span><br>
@@ -60,7 +64,6 @@
                 <span class="match-counts label">draws</span>
               </div>
             </div>
-            <div class="row align-middle"></div>
           </div>
         </div>
       </div>
@@ -87,10 +90,15 @@
         $("#real-name").text(user.real_name);
         $("#profile-rating").text("(" + Number(user.rating).toFixed(0) + ")");
 
+        var numGames = parseInt(user.num_games_played);
         var wins = parseInt(user.num_games_won);
-        var losses = parseInt(user.num_games_played) - wins;
+        var losses = numGames - wins;
+        var winsPercentage = (wins / numGames) * 100
+        var lossesPercentage = (losses / numGames) * 100
         $("#match-data .match-counts .win").text(wins);
         $("#match-data .match-counts .loss").text(losses);
+        $(".win-bar").css("width", Number(winsPercentage).toFixed(0) + "%")
+        $(".lose-bar").css("width", Number(lossesPercentage).toFixed(0) + "%")
       })
 
       $.get("/api/v1/rankings?top=-1", function(data){
