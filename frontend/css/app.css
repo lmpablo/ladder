@@ -16,7 +16,7 @@
   font-weight: 400;
 }
 
-* {
+*, abbr {
   font-family: "GT Walsheim", "Avenir Next", "Helvetica Neue", Helvetica, Arial, sans-serif;
   color: #1C3A5F;
 }
@@ -106,6 +106,11 @@ h1 {
   font-size: 42px;
 }
 
+.quick-stats {
+  height: 297px;
+  background: #E7E7E7;
+}
+
 .win {
   color: #00B36F;
 }
@@ -116,6 +121,10 @@ h1 {
 
 .right-spacer {
   margin-right: 25px !important;
+}
+
+.top-spacer {
+  margin-top: 25px !important;
 }
 
 .bar {

@@ -12,6 +12,7 @@ from models.metadata import Metadata
 from models.rating import Rating
 from models.match import Match
 from models.player import Player
+from models.player_stats import PlayerStats
 from models.ranking import Ranking
 from modules.probability import pairwise_probability_calculation as win_probability
 from dateutil import parser
@@ -195,7 +196,7 @@ def delete_match():
 def get_player_matches(player_id):
     limit = int(request.args.get('limit', '0'))
     sort = int(request.args.get('sort', '1'))
-    _matches = list(db.Match.find({'participants.player_id': {'$in': [player_id]}}).sort('timestamp', sort).limit(limit))
+    _matches = list(db.Match.find({'participants.player_id': {'$in': [player_id]}}).sort('_id', sort).limit(limit))
     matches = []
     for m in _matches:
         opp = [p for p in m['participants'] if p['player_id'] != player_id][0]
@@ -228,11 +229,12 @@ def force_recalculate_ratings():
     Clears the entire list of ratings and re-calculates everything from scratch
     """
     db[DB_NAME].drop_collection(Rating.__collection__)
+    db[DB_NAME].drop_collection(PlayerStats.__collection__)
     db.Player.reset_all_ratings()
 
     counter = 0
     last_match = None
-    for match in db.Match.find().sort('timestamp', 1):
+    for match in db.Match.find().sort('_id', 1):
         try:
             calculate_match_ratings(match)
             counter += 1
@@ -258,6 +260,17 @@ def get_player_ratings(player_id):
     ratings = list(db.Rating.find({'player_id': player_id}).sort('timestamp', sort_order))
     return json_response(data={'ratings': [r.to_json_type() for r in ratings]})
 
+
+# Player <-> Stats
+@app.route("/api/v1/players/<player_id>/stats")
+def get_player_stats(player_id):
+    user = db.PlayerStats.find_one({'player_id': player_id})
+
+    if user is None:
+        return json_response(data={}, code=400, status="error", reason="User Not Found")
+    else:
+        res = user
+        return json_response(res.to_json_type())
 
 # Rankings
 
@@ -326,6 +339,7 @@ def calculate_match_ratings(match):
             loser = player
 
     calculate_and_update(winner, loser)
+    add_to_stats(match, winner, loser)
     for player in [winner, loser]:
         db.Rating({
             'player_id': player.player_id,
@@ -349,16 +363,73 @@ def calculate_match_ratings(match):
     metadata.save()
 
 
+def add_to_stats(match, winner, loser):
+    ws = db.PlayerStats.find_one({'player_id': winner.player_id})
+    ls = db.PlayerStats.find_one({'player_id': loser.player_id})
+
+    if ws is None:
+        ws = db.PlayerStats()
+        ws.player_id = winner.player_id
+    if ls is None:
+        ls = db.PlayerStats()
+        ls.player_id = loser.player_id
+
+    if match.participants[0]['player_id'] == winner.player_id:
+        w_score = match.participants[0]['score']
+        l_score = match.participants[1]['score']
+    else:
+        w_score = match.participants[1]['score']
+        l_score = match.participants[0]['score']
+
+    # Personal PPG
+    winner_prev_point_sum = ws.num_games_played.total * ws.ppg
+    winner_ppsum_win = ws.num_games_played.won * ws.win_ppg
+    loser_prev_point_sum = ls.num_games_played.total * ls.ppg
+    loser_ppsum_lose = ls.num_games_played.lost * ls.lose_ppg
+
+    ws.num_games_played.won += 1
+    ws.num_games_played.total += 1
+    ls.num_games_played.lost += 1
+    ls.num_games_played.total += 1
+
+    ws.ppg = (winner_prev_point_sum + w_score) / float(ws.num_games_played.total)
+    ws.win_ppg = (winner_ppsum_win + w_score) / float(ws.num_games_played.won)
+    ls.ppg = (loser_prev_point_sum + l_score) / float(ls.num_games_played.total)
+    ls.lose_ppg = (loser_ppsum_lose + l_score) / float(ls.num_games_played.lost)
+
+    # Current Streaks
+    if ws.current_streak.type == 'win':
+        ws.current_streak.streak += 1
+    else:
+        ws.current_streak.streak = 1
+        ws.current_streak.type = 'win'
+
+    if ls.current_streak.type == 'lose':
+        ls.current_streak.streak += 1
+    else:
+        ls.current_streak.streak = 1
+        ls.current_streak.type = 'lose'
+
+    if ws.current_streak.streak > ws.longest_win_streak:
+        ws.longest_win_streak = ws.current_streak.streak
+    if ls.current_streak.streak > ls.longest_lose_streak:
+        ls.longest_lose_streak = ls.current_streak.streak
+
+    ws.save()
+    ls.save()
+
+
 def ensure_indexes():
     # unfortunately, mongokit does NOT do indexes automatically -- false advertising
     db.Player.generate_index(db[DB_NAME][Player.__collection__])
     db.Match.generate_index(db[DB_NAME][Match.__collection__])
     db.Rating.generate_index(db[DB_NAME][Rating.__collection__])
     db.Ranking.generate_index(db[DB_NAME][Ranking.__collection__])
+    db.PlayerStats.generate_index(db[DB_NAME][PlayerStats.__collection__])
 
 
 if __name__ == '__main__':
     db = Connection(host=DB_HOST, port=DB_PORT)
-    db.register([Player, Match, Rating, Metadata, Ranking])
+    db.register([Player, Match, Rating, Metadata, Ranking, PlayerStats])
     ensure_indexes()
     app.run(host='0.0.0.0')

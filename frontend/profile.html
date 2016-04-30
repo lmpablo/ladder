@@ -64,6 +64,51 @@
                 <span class="match-counts label">draws</span>
               </div>
             </div>
+            <div class="row align-middle top-spacer">
+              <div class="columns small-12"><h4>Quick Stats</h4></div>
+            </div>
+            <div class="row align-middle quick-stats">
+              <div class="columns small-8">
+                <div class="row align-middle">
+                  <div class="columns quick-stats-row"><p><strong>Points Per Game</strong></p></div>
+                </div>
+                <div class="row align-middle">
+                  <div class="columns quick-stats-row"><p><abbr title="Points Per Game">PPG</abbr> in wins</p></div>
+                </div>
+                <div class="row align-middle">
+                  <div class="columns quick-stats-row"><p><abbr title="Points Per Game">PPG</abbr> in losses</p></div>
+                </div>
+                <div class="row align-middle">
+                  <div class="columns quick-stats-row"><p><strong>Current Streak</strong></p></div>
+                </div>
+                <div class="row align-middle">
+                  <div class="columns quick-stats-row"><p>Longest Win Streak</p></div>
+                </div>
+                <div class="row align-middle">
+                  <div class="columns quick-stats-row"><p>Longest Lose Streak</p></div>
+                </div>
+              </div>
+              <div class="columns small-4 text-center">
+                <div class="row align-middle text-center">
+                  <div class="columns quick-stats-row"><p id="ppg">0.0</p></div>
+                </div>
+                <div class="row align-middle text-center">
+                  <div class="columns quick-stats-row"><p id="ppg-w" class="win">0.0</p></div>
+                </div>
+                <div class="row align-middle text-center">
+                  <div class="columns quick-stats-row"><p id="ppg-l" class="loss">0.0</p></div>
+                </div>
+                <div class="row align-middle text-center">
+                  <div class="columns quick-stats-row"><p id="curr-streak">0 W</p></div>
+                </div>
+                <div class="row align-middle text-center">
+                  <div class="columns quick-stats-row"><p id="longest-w-streak" class="win">0 W</p></div>
+                </div>
+                <div class="row align-middle text-center">
+                  <div class="columns quick-stats-row"><p id="longest-l-streak" class="loss">0 L</p></div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -93,12 +138,12 @@
         var numGames = parseInt(user.num_games_played);
         var wins = parseInt(user.num_games_won);
         var losses = numGames - wins;
-        var winsPercentage = (wins / numGames) * 100
-        var lossesPercentage = (losses / numGames) * 100
+        var winsPercentage = ((wins / numGames) * 100) - 0.1
+        var lossesPercentage = ((losses / numGames) * 100) - 0.1
         $("#match-data .match-counts .win").text(wins);
         $("#match-data .match-counts .loss").text(losses);
-        $(".win-bar").css("width", Number(winsPercentage).toFixed(0) + "%")
-        $(".lose-bar").css("width", Number(lossesPercentage).toFixed(0) + "%")
+        $(".win-bar").css("width", Number(winsPercentage).toFixed(1) + "%")
+        $(".lose-bar").css("width", Number(lossesPercentage).toFixed(1) + "%")
       })
 
       $.get("/api/v1/rankings?top=-1", function(data){
@@ -114,6 +159,17 @@
           $("#profile-rank").text("#" + userData.rank);
         }
       });
+
+      $.get("/api/v1/players/{{ player_id }}/stats", function(data) {
+        var stats = data.data;
+        console.log(stats)
+        $("#ppg").text(Number(stats.ppg).toFixed(2))
+        $("#ppg-w").text(Number(stats.win_ppg).toFixed(2))
+        $("#ppg-l").text(Number(stats.lose_ppg).toFixed(2))
+        $("#curr-streak").text(stats.current_streak.streak + " " + stats.current_streak.type[0].toUpperCase())
+        $("#longest-w-streak").text(stats.longest_win_streak + " W")
+        $("#longest-l-streak").text(stats.longest_lose_streak + " L")
+      })
 
       $.get("/api/v1/players/{{ player_id }}/matches?sort=-1&limit=10", function(data) {
         var matches = data.data.matches;
