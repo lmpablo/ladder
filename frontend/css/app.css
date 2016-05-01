@@ -106,6 +106,10 @@ h1 {
   font-size: 19pt;
 }
 
+.opp-name {
+  font-size: 16pt;
+}
+
 .opp-stat-label, .match-counts .label {
   font-size: 10pt;
   color: #79899E;
