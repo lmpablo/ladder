@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <title>ladder leaderboard</title>
   <link rel="stylesheet" href="/css/foundation.min.css">
-  <link rel="stylesheet" href="/css/app.css">
+  <link rel="stylesheet" href="/css/app.css?v=1">
 </head>
 <body>
   <div class="banner-container">
@@ -87,6 +87,15 @@
                 <div class="row align-middle">
                   <div class="columns quick-stats-row"><p>Longest Lose Streak</p></div>
                 </div>
+                <div class="row align-middle">
+                  <div class="columns quick-stats-row"><p><strong><abbr title="Points Per Game">PPG</abbr> Differential</strong></p></div>
+                </div>
+                <div class="row align-middle">
+                  <div class="columns quick-stats-row"><p><abbr title="Points Per Game">PPG</abbr> Differential in wins</p></div>
+                </div>
+                <div class="row align-middle">
+                  <div class="columns quick-stats-row"><p><abbr title="Points Per Game">PPG</abbr> Differential in losses</p></div>
+                </div>
               </div>
               <div class="columns small-4 text-center">
                 <div class="row align-middle text-center">
@@ -107,79 +116,32 @@
                 <div class="row align-middle text-center">
                   <div class="columns quick-stats-row"><p id="longest-l-streak" class="loss">0 L</p></div>
                 </div>
+                <div class="row align-middle text-center">
+                  <div class="columns quick-stats-row"><p id="apd">0.0</p></div>
+                </div>
+                <div class="row align-middle text-center">
+                  <div class="columns quick-stats-row"><p id="apd-w">0.0</p></div>
+                </div>
+                <div class="row align-middle text-center">
+                  <div class="columns quick-stats-row"><p id="apd-l">0.0</p></div>
+                </div>
               </div>
             </div>
           </div>
         </div>
       </div>
+      <div class="row">
+        <div class="columns">
+          <h1>Match-ups</h1>
+        </div>
+      </div>
+      <div id="match-ups"></div>
     </div>
   </div>
   <script src="/js/vendor/jquery.js"></script>
   <script>
-    $(function(){
-      function buildMatchRows(result, opponent, opponentID, score, date) {
-        var resultClass = result == 'W' ? 'win' : 'loss';
-        var daysOfTheWeek = ['Su', 'M', 'T', 'W', 'Th', 'F', 'Sa']
-        return '<div class="row align-middle lb-row lb-row-sm text-center right-spacer">' +
-          '<div class="columns small-2"><span class="' + resultClass +'">' + result + '</span></div>' +
-          '<div class="columns small-4"><a class="lb-link" href="/profile/' + opponentID + '">@' + opponent + '</a></div>' +
-          '<div class="columns small-2">' + score +'</div>' +
-          '<div class="columns small-4">' + date.getFullYear() + "/" + (date.getMonth() + 1) + "/" + date.getDate() + ' (' +  daysOfTheWeek[date.getDay()] + ')</div>' +
-        '</div>'
-      }
-
-      $.get("/api/v1/players/{{ player_id }}", function(data) {
-        var user = data.data;
-        $("img#profile-image").attr("src", user.profile_picture);
-        $("#profile-name").text("@" + user.slack_name);
-        $("#real-name").text(user.real_name);
-        $("#profile-rating").text("(" + Number(user.rating).toFixed(0) + ")");
-
-        var numGames = parseInt(user.num_games_played);
-        var wins = parseInt(user.num_games_won);
-        var losses = numGames - wins;
-        var winsPercentage = ((wins / numGames) * 100) - 0.1
-        var lossesPercentage = ((losses / numGames) * 100) - 0.1
-        $("#match-data .match-counts .win").text(wins);
-        $("#match-data .match-counts .loss").text(losses);
-        $(".win-bar").css("width", Number(winsPercentage).toFixed(1) + "%")
-        $(".lose-bar").css("width", Number(lossesPercentage).toFixed(1) + "%")
-      })
-
-      $.get("/api/v1/rankings?top=-1", function(data){
-        var rankings = data.data.rankings;
-        var userData = ""
-        for (var i = 0, len = rankings.length; i < len; i++) {
-          var r = rankings[i];
-          if (r.player_id == "{{ player_id }}") {
-            userData = r;
-          }
-        }
-        if (userData) {
-          $("#profile-rank").text("#" + userData.rank);
-        }
-      });
-
-      $.get("/api/v1/players/{{ player_id }}/stats", function(data) {
-        var stats = data.data;
-        console.log(stats)
-        $("#ppg").text(Number(stats.ppg).toFixed(2))
-        $("#ppg-w").text(Number(stats.win_ppg).toFixed(2))
-        $("#ppg-l").text(Number(stats.lose_ppg).toFixed(2))
-        $("#curr-streak").text(stats.current_streak.streak + " " + stats.current_streak.type[0].toUpperCase())
-        $("#longest-w-streak").text(stats.longest_win_streak + " W")
-        $("#longest-l-streak").text(stats.longest_lose_streak + " L")
-      })
-
-      $.get("/api/v1/players/{{ player_id }}/matches?sort=-1&limit=10", function(data) {
-        var matches = data.data.matches;
-        var matchHistoryDiv = $("#match-history")
-        for (var i = 0, len = matches.length; i < len; i++) {
-          var match = matches[i];
-          matchHistoryDiv.append(buildMatchRows(match.result, match.opponent_name, match.opponent, match.scores, new Date(match.timestamp)))
-        }
-      })
-    })
+    var playerID = "{{ player_id }}";
   </script>
+  <script src="/js/profile.js"></script>
 </body>
 </html>

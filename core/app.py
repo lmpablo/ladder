@@ -381,21 +381,86 @@ def add_to_stats(match, winner, loser):
         w_score = match.participants[1]['score']
         l_score = match.participants[0]['score']
 
-    # Personal PPG
+    pr = win_probability(winner, loser)
+    found = False
+    for mu in ws.match_ups:
+        if mu['opp_id'] == loser.player_id:
+            found = True
+            prev_ppg = mu['games_played_against'] * mu['ppg_against']
+            mu['last_played_against'] = match.timestamp
+            mu['games_played_against'] += 1
+            mu['games_won_against'] += 1
+            mu['ppg_against'] = (prev_ppg + w_score) / float(mu['games_played_against'])
+            mu['pr_win_against'] = pr[winner.player_id]['win']
+            break
+    if not found:
+        ws.match_ups.append({
+            'opp_id': loser.player_id,
+            'opp_slack_name': loser.slack_name,
+            'opp_profile_picture': loser.profile_picture,
+            'last_played_against': match.timestamp,
+            'games_played_against': 1,
+            'games_won_against': 1,
+            'games_lost_against': 0,
+            'ppg_against': float(w_score),
+            'pr_win_against': pr[winner.player_id]['win']
+        })
+
+    found = False
+    for mu in ls.match_ups:
+        if mu['opp_id'] == winner.player_id:
+            found = True
+            prev_ppg = mu['games_played_against'] * mu['ppg_against']
+            mu['last_played_against'] = match.timestamp
+            mu['games_played_against'] += 1
+            mu['games_lost_against'] += 1
+            mu['ppg_against'] = (prev_ppg + l_score) / float(mu['games_played_against'])
+            mu['pr_win_against'] = pr[loser.player_id]['win']
+            break
+    if not found:
+        ls.match_ups.append({
+            'opp_id': winner.player_id,
+            'opp_slack_name': winner.slack_name,
+            'opp_profile_picture': winner.profile_picture,
+            'last_played_against': match.timestamp,
+            'games_played_against': 1,
+            'games_won_against': 0,
+            'games_lost_against': 1,
+            'ppg_against': float(l_score),
+            'pr_win_against': pr[loser.player_id]['win']
+        })
+
+    # Prev Data
+    ## PPG
     winner_prev_point_sum = ws.num_games_played.total * ws.ppg
     winner_ppsum_win = ws.num_games_played.won * ws.win_ppg
     loser_prev_point_sum = ls.num_games_played.total * ls.ppg
     loser_ppsum_lose = ls.num_games_played.lost * ls.lose_ppg
 
-    ws.num_games_played.won += 1
-    ws.num_games_played.total += 1
-    ls.num_games_played.lost += 1
-    ls.num_games_played.total += 1
+    ## PD
+    winner_prev_diff_sum = ws.num_games_played.total * ws.ppg_diff
+    winner_pdsum_win = ws.num_games_played.won * ws.win_ppg_diff
+    loser_prev_diff_sum = ls.num_games_played.total * ls.ppg_diff
+    loser_pdsum_lose = ls.num_games_played.lost * ls.lose_ppg_diff
 
+    # GP
+    ws.num_games_played.total += 1
+    ls.num_games_played.total += 1
+    ws.num_games_played.won += 1
+    ls.num_games_played.lost += 1
+
+    # Personal PPG
     ws.ppg = (winner_prev_point_sum + w_score) / float(ws.num_games_played.total)
     ws.win_ppg = (winner_ppsum_win + w_score) / float(ws.num_games_played.won)
     ls.ppg = (loser_prev_point_sum + l_score) / float(ls.num_games_played.total)
     ls.lose_ppg = (loser_ppsum_lose + l_score) / float(ls.num_games_played.lost)
+
+    # PPG Diff
+    diff = w_score - l_score
+    ws.ppg_diff = (winner_prev_diff_sum + diff) / float(ws.num_games_played.total)
+    ws.win_ppg_diff = (winner_pdsum_win + diff) / float(ws.num_games_played.won)
+    ls.ppg_diff = (loser_prev_diff_sum - diff) / float(ls.num_games_played.total)
+    ls.lose_ppg_diff = (loser_pdsum_lose - diff) / float(ls.num_games_played.lost)
 
     # Current Streaks
     if ws.current_streak.type == 'win':
@@ -410,6 +475,7 @@ def add_to_stats(match, winner, loser):
         ls.current_streak.streak = 1
         ls.current_streak.type = 'lose'
 
+    # Streak Records
     if ws.current_streak.streak > ws.longest_win_streak:
         ws.longest_win_streak = ws.current_streak.streak
     if ls.current_streak.streak > ls.longest_lose_streak:

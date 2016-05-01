@@ -20,17 +20,22 @@ class PlayerStats(Document):
         'ppg': float,
         'win_ppg': float,
         'lose_ppg': float,
+        'ppg_diff': float,
+        'win_ppg_diff': float,
+        'lose_ppg_diff': float,
         'current_streak': {
             'type': basestring,
             'streak': int
         },
         'match_ups': [{
             'opp_id': basestring,
+            'opp_slack_name': basestring,
+            'opp_profile_picture': basestring,
             'last_played_against': datetime.datetime,
             'games_played_against': int,
             'games_won_against': int,
             'games_lost_against': int,
-            'ppg_against': int,
+            'ppg_against': float,
             'pr_win_against': float
         }]
     }
@@ -46,6 +51,9 @@ class PlayerStats(Document):
         'ppg': 0.0,
         'win_ppg': 0.0,
         'lose_ppg': 0.0,
+        'ppg_diff': 0.0,
+        'win_ppg_diff': 0.0,
+        'lose_ppg_diff': 0.0,
         'match_ups': [],
         'current_streak.type': 'win',
         'current_streak.streak': 0

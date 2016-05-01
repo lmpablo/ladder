@@ -1,13 +1,13 @@
 @font-face {
   font-family: "GT Walsheim";
   src: url("gtwm.ttf");
-  font-weight: "700";
+  font-weight: 700;
 }
 
 @font-face {
   font-family: "GT Walsheim";
   src: url("gtw.ttf");
-  font-weight: "400";
+  font-weight: 400;
 }
 
 @font-face {
@@ -42,7 +42,7 @@ h1 {
   font-weight: 500;
 }
 
-#leaderboard, #match-data {
+#leaderboard, #match-data, #match-ups {
   margin-bottom: 50px;
 }
 
@@ -96,8 +96,24 @@ h1 {
   color: #1C3A5F;
 }
 
+.opponent-card {
+  padding: 15px 10px;
+  background: white;
+  margin-bottom: 5px;
+}
+
+.opp-stat {
+  font-size: 19pt;
+}
+
+.opp-stat-label, .match-counts .label {
+  font-size: 10pt;
+  color: #79899E;
+  text-transform: uppercase;
+}
+
 .match-counts {
-  height: 200px;
+  height: 160px;
   background: white;
 }
 
@@ -107,8 +123,12 @@ h1 {
 }
 
 .quick-stats {
-  height: 297px;
-  background: #E7E7E7;
+  height: 345px;
+  background: #E1E6EC;
+}
+
+.quick-stats-row p {
+  margin-bottom: 7px;
 }
 
 .win {
@@ -128,7 +148,7 @@ h1 {
 }
 
 .bar {
-  height: 10px;
+  height: 3px;
 }
 
 .win-bar {
