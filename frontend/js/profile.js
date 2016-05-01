@@ -13,9 +13,9 @@ $(function(){
   function buildMatchUpRows(oppName, oppId, oppPicture, record, lastPlayed, ppg, winPr) {
     return '<div class="row align-middle opponent-card text-center">' +
       '<div class="columns small-1"><img src="' + oppPicture + '" alt=""></div>' +
-      '<div class="columns small-3 text-left"><span class="opp-name">@' + oppName + '</span></div>' +
+      '<div class="columns small-2 text-left"><span class="opp-name">@' + oppName + '</span></div>' +
       '<div class="columns small-2"><span class="opp-stat">' + record + '</span><br><span class="opp-stat-label">RECORD</span></div>' +
-      '<div class="columns small-2"><span class="opp-stat">' + lastPlayed.getFullYear() + '/' + (lastPlayed.getMonth() + 1) + '/' + lastPlayed.getDate() + '</span><br><span class="opp-stat-label">LAST PLAYED</span></div>' +
+      '<div class="columns small-3"><span class="opp-stat"><time class="timeago" datetime="'+  lastPlayed.toISOString() + '">' + lastPlayed + '</time></span><br><span class="opp-stat-label">LAST PLAYED</span></div>' +
       '<div class="columns small-2"><span class="opp-stat">' + Number(ppg).toFixed(2) +'</span><br><span class="opp-stat-label">PPG</span></div>' +
       '<div class="columns small-2"><span class="opp-stat">' + Number(winPr * 100).toFixed(0) + '%</span><br><span class="opp-stat-label">WIN PROBABILITY</span></div>' +
     '</div>'
@@ -74,6 +74,7 @@ $(function(){
       var record = m.games_won_against + "-" + m.games_lost_against;
       $matchups.append(buildMatchUpRows(m.opp_slack_name, m.opp_id, m.opp_profile_picture, record, new Date(m.last_played_against), m.ppg_against, m.pr_win_against))
     }
+    $("time.timeago").timeago();
   })
 
   $.get("/api/v1/players/" + playerID + "/matches?sort=-1&limit=10", function(data) {

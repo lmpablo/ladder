@@ -102,8 +102,12 @@ h1 {
   margin-bottom: 5px;
 }
 
+.opponent-card:nth-child(odd) {
+  background: #F5F5F7;
+}
+
 .opp-stat {
-  font-size: 19pt;
+  font-size: 16pt;
 }
 
 .opp-name {
