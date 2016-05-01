@@ -270,6 +270,9 @@ def get_player_stats(player_id):
         return json_response(data={}, code=400, status="error", reason="User Not Found")
     else:
         res = user
+        re_ordered_matchups = sorted([m for m in user.match_ups], key=lambda d: d['games_played_against'], reverse=True)
+        user.match_ups = re_ordered_matchups
+
         return json_response(res.to_json_type())
 
 # Rankings
