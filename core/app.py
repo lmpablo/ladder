@@ -294,17 +294,25 @@ def get_rankings():
                          reverse=True)
 
     with_ranking = []
-    for index, rank in enumerate(sorted_data):
+    without_ranking = []
+    rank_counter = 1
+    for rank in sorted_data:
         player_info = db.Player.find_one({'player_id': rank['player_id']})
         if player_info:
             for key in ['slack_name', 'real_name', 'profile_picture', 'num_games_played', 'num_games_won']:
                 rank[key] = player_info[key]
-        rank['rank'] = index + 1
+            if rank['num_games_played'] < 5:
+                rank['rank'] = 'NR'
+                rank['rating'] = "-1"
+                without_ranking.append(rank)
+                continue
+        rank['rank'] = rank_counter
+        rank_counter += 1
         with_ranking.append(rank)
 
     if limit == -1:
-        return json_response(data={'rankings': with_ranking})
-    return json_response(data={'rankings': with_ranking[:limit]})
+        return json_response(data={'rankings': with_ranking + without_ranking})
+    return json_response(data={'rankings': with_ranking[:limit] + without_ranking})
 
 
 # Misc
