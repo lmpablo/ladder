@@ -104,7 +104,7 @@ $(function(){
       });
       var dates = ratingsData.reverse().map(function(el, index) {
         var date = new Date(el.timestamp);
-        var d = months[(date.getMonth() + 1)] + " " + date.getDate() + ", " + date.getFullYear()
+        var d = months[date.getMonth()] + " " + date.getDate() + ", " + date.getFullYear()
         if (d == previousDate) {
           matchNum += 1
         } else {
