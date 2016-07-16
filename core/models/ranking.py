@@ -5,7 +5,7 @@ import datetime
 
 class Ranking(Document):
     __database__ = DB_NAME
-    __collection__ = 'matches'
+    __collection__ = 'ranking'
     use_dot_notation = True
 
     structure = {

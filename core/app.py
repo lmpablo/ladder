@@ -255,9 +255,10 @@ def force_recalculate_ratings():
 
 @app.route("/api/v1/players/<player_id>/ratings")
 def get_player_ratings(player_id):
+    limit = int(request.args.get('top', '10'))
     _sort_order = request.args.get('sort', 'ascending')
     sort_order = 1 if _sort_order == 'ascending' else -1
-    ratings = list(db.Rating.find({'player_id': player_id}).sort('timestamp', sort_order))
+    ratings = list(db.Rating.find({'player_id': player_id}).sort('timestamp', sort_order))[:limit]
     return json_response(data={'ratings': [r.to_json_type() for r in ratings]})
 
 
@@ -279,7 +280,7 @@ def get_player_stats(player_id):
 
 @app.route("/api/v1/rankings")
 def get_rankings():
-    limit = int(request.args.get('top', '10'))
+    limit = int(request.args.get('top', '50'))
     player_ratings = {}
     for rating in db.Rating.find().sort('_id', -1):
         if rating.player_id not in player_ratings:

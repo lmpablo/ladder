@@ -30,6 +30,24 @@
     <div class="columns">
       <div class="row">
         <div class="columns">
+          <h1>Ratings History</h1>
+        </div>
+      </div>
+      <div class="row">
+        <div class="columns">
+          <p class="text-center">Ratings from the last
+            <span id="num-games-ratings">0</span> games,
+            <span id="start-date-ratings">Jan 1, 1970</span> to
+            <span id="end-date-ratings">Jan 1, 1970</span></p>
+          <canvas id="ratings" width="500" height="100"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="row">
+    <div class="columns">
+      <div class="row">
+        <div class="columns">
           <h1>Match History</h1>
         </div>
       </div>
@@ -143,6 +161,7 @@
     var playerID = "{{ player_id }}";
   </script>
   <script src="/js/vendor/timeago.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.1.6/Chart.bundle.min.js"></script>
   <script src="/js/profile.js"></script>
 </body>
 </html>

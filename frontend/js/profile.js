@@ -1,4 +1,8 @@
 $(function(){
+  var ctx = $("#ratings");
+  var months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  var ratingsToShow = 100;
+
   function buildMatchRows(result, opponent, opponentID, score, date) {
     var resultClass = result == 'W' ? 'win' : 'loss';
     var daysOfTheWeek = ['Su', 'M', 'T', 'W', 'Th', 'F', 'Sa']
@@ -84,5 +88,65 @@ $(function(){
       var match = matches[i];
       matchHistoryDiv.append(buildMatchRows(match.result, match.opponent_name, match.opponent, match.scores, new Date(match.timestamp)))
     }
-  })
+  });
+
+
+  (function buildGraph() {
+    $.get("/api/v1/players/" + playerID + "/ratings?sort=descending&top=" + ratingsToShow, function(data) {
+      // the ratings come in newest -> oldest order, limited to the top N most recent
+      // rankings
+      var ratingsData = data.data.ratings;
+      var numRatings = ratingsData.length;
+      var previousDate = "";
+      var matchNum = 1;
+      var ratings = ratingsData.map(function(el, index) {
+        return el.rating.toFixed(2);
+      });
+      var dates = ratingsData.reverse().map(function(el, index) {
+        var date = new Date(el.timestamp);
+        var d = months[(date.getMonth() + 1)] + " " + date.getDate() + ", " + date.getFullYear()
+        if (d == previousDate) {
+          matchNum += 1
+        } else {
+          matchNum = 1
+        }
+        previousDate = d;
+        return d + (matchNum > 1 ? " (Match #" + matchNum + ')' : '');
+      });
+
+      $('#num-games-ratings').text(numRatings < ratingsToShow ? numRatings : ratingsToShow);
+      $('#start-date-ratings').text(dates[0]);
+      $('#end-date-ratings').text(dates[dates.length - 1]);
+
+      var myChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: dates,
+            datasets: [{
+                label: 'Rating',
+                data: ratings.reverse(),
+                borderWidth: 1,
+                borderColor: "#FF4F00",
+                backgroundColor: 'rgba(255, 79, 0, 0.5)'
+            }]
+        },
+        options: {
+          scales: {
+            yAxes: [{
+              ticks: {
+                  beginAtZero: false
+              }
+            }],
+            xAxes: [{
+              display: false,
+              autoSkip: true
+            }]
+          },
+          legend: {
+            display: false
+          }
+        }
+      });
+    });
+  })();
 })
