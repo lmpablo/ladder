@@ -304,7 +304,7 @@ def get_rankings():
                 rank[key] = player_info[key]
             if rank['num_games_played'] < 5:
                 rank['rank'] = 'NR'
-                rank['rating'] = "-1"
+                rank['rating'] = -1
                 without_ranking.append(rank)
                 continue
         rank['rank'] = rank_counter
