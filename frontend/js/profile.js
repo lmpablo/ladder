@@ -116,7 +116,7 @@ $(function(){
         return d + (matchNum > 1 ? " (Match #" + matchNum + ')' : '');
       });
 
-      $('#num-games-ratings').text(numRatings < ratingsToShow ? numRatings : ratingsToShow);
+      $('#num-games-ratings').text(numRatings);
       $('#start-date-ratings').text(dates[0]);
       $('#end-date-ratings').text(dates[dates.length - 1]);
 
