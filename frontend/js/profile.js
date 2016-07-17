@@ -64,7 +64,6 @@ $(function(){
     var stats = data.data;
     var matchups = data.data.match_ups;
     var $matchups = $("#match-ups");
-    console.log(stats)
     $("#ppg").text(Number(stats.ppg).toFixed(2))
     $("#ppg-w").text(Number(stats.win_ppg).toFixed(2))
     $("#ppg-l").text(Number(stats.lose_ppg).toFixed(2))
@@ -89,7 +88,6 @@ $(function(){
     for (var i = 0, len = matchups.length; i < len; i++) {
       // buildMatchUpRows(oppName, oppId, oppPicture, record, lastPlayed, ppg, winPr)
       var m = matchups[i];
-      console.log(m.last_played_against, new Date(m.last_played_against), m.opp_slack_name)
       var record = m.games_won_against + "-" + m.games_lost_against;
       $matchups.append(buildMatchUpRows(m.opp_slack_name, m.opp_id, m.opp_profile_picture, record, new Date(m.last_played_against), m.ppg_against, m.pr_win_against))
     }

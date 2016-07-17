@@ -50,7 +50,8 @@
         for (var i = 0, len = rankings.length; i < len; i++) {
           var r = rankings[i];
           var percent = (r.num_games_won / r.num_games_played) * 100
-          $("#leaderboard").append(buildRow(r.rank, r.profile_picture, r.player_id, "@" + r.slack_name, Number(r.rating).toFixed(0), percent, r.num_games_played))
+          var name = r.real_name === '' ? '@' + r.slack_name : r.real_name;
+          $("#leaderboard").append(buildRow(r.rank, r.profile_picture, r.player_id, name, Number(r.rating).toFixed(0), percent, r.num_games_played))
         }
       });
     })

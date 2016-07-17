@@ -63,9 +63,10 @@ h1 {
   border: solid 5px white;
 }
 
-#profile-name {
+#real-name {
   font-size: 42px;
   color: #FFFFFF;
+  letter-spacing: -2px;
 }
 
 #profile-rank {
