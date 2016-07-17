@@ -36,6 +36,7 @@ $(function(){
       $("#real-name").text(user.real_name);
     } else {
       $("#real-name").text("@" + user.slack_name);
+      $("#profile-name").text("@" + user.slack_name);
     }
 
     $("#profile-rating").text("(" + Number(user.rating).toFixed(0) + ")");
