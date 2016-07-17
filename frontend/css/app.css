@@ -42,7 +42,7 @@ h1 {
   font-weight: 500;
 }
 
-#leaderboard, #match-data, #match-ups, #ratings {
+#leaderboard, #match-data, #match-ups, #ratings-container {
   margin-bottom: 50px;
 }
 
@@ -114,7 +114,7 @@ h1 {
   font-size: 16pt;
 }
 
-.opp-stat-label, .match-counts .label {
+.opp-stat-label, .match-counts .label, .ratings-label {
   font-size: 10pt;
   color: #79899E;
   text-transform: uppercase;

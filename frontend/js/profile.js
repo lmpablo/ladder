@@ -3,6 +3,8 @@ $(function(){
   var months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
   var ratingsToShow = 100;
 
+  var myChart;
+
   function buildMatchRows(result, opponent, opponentID, score, date) {
     var resultClass = result == 'W' ? 'win' : 'loss';
     var daysOfTheWeek = ['Su', 'M', 'T', 'W', 'Th', 'F', 'Sa']
@@ -91,10 +93,10 @@ $(function(){
   });
 
 
-  (function buildGraph() {
-    $.get("/api/v1/players/" + playerID + "/ratings?sort=descending&top=" + ratingsToShow, function(data) {
-      // the ratings come in newest -> oldest order, limited to the top N most recent
-      // rankings
+  function buildGraph(toShow) {
+    $.get("/api/v1/players/" + playerID + "/ratings?sort=descending&top=" + toShow, function(data) {
+      // the ratings come in newest -> oldest order,
+      // limited to the top N most recent rankings
       var ratingsData = data.data.ratings;
       var numRatings = ratingsData.length;
       var previousDate = "";
@@ -118,35 +120,54 @@ $(function(){
       $('#start-date-ratings').text(dates[0]);
       $('#end-date-ratings').text(dates[dates.length - 1]);
 
-      var myChart = new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: dates,
-            datasets: [{
-                label: 'Rating',
-                data: ratings.reverse(),
-                borderWidth: 1,
-                borderColor: "#FF4F00",
-                backgroundColor: 'rgba(255, 79, 0, 0.5)'
-            }]
-        },
-        options: {
-          scales: {
-            yAxes: [{
-              ticks: {
-                  beginAtZero: false
-              }
-            }],
-            xAxes: [{
-              display: false,
-              autoSkip: true
-            }]
+      if (!myChart) {
+        myChart = new Chart(ctx, {
+          type: 'line',
+          data: {
+              labels: dates,
+              datasets: [{
+                  label: 'Rating',
+                  data: ratings.reverse(),
+                  borderWidth: 1,
+                  borderColor: "#3081E8",
+                  backgroundColor: 'rgba(48, 129, 232, 0.3)'
+              }]
           },
-          legend: {
-            display: false
+          options: {
+            scales: {
+              yAxes: [{
+                ticks: {
+                    beginAtZero: false
+                }
+              }],
+              xAxes: [{
+                display: false,
+                autoSkip: true
+              }]
+            },
+            legend: {
+              display: false
+            }
           }
-        }
-      });
+        });
+      } else {
+        // myChart.data.labels = []//dates.map(function(){ return '' });
+        myChart.data.datasets[0].data = ratings.map(function(){ return 0 });
+        myChart.update();
+
+        myChart.data.labels = dates;
+        myChart.data.datasets[0].data = ratings.reverse();
+        myChart.update();
+      }
+
     });
-  })();
-})
+  }
+
+  buildGraph(25)
+
+  $('.update-ratings').on('click', function(e){
+    e.preventDefault();
+    var toShow = parseInt($(this).attr('data-value'))
+    buildGraph(toShow)
+  })
+});

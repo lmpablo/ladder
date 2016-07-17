@@ -258,7 +258,11 @@ def get_player_ratings(player_id):
     limit = int(request.args.get('top', '10'))
     _sort_order = request.args.get('sort', 'ascending')
     sort_order = 1 if _sort_order == 'ascending' else -1
-    ratings = list(db.Rating.find({'player_id': player_id}).sort('timestamp', sort_order))[:limit]
+    all_ratings = list(db.Rating.find({'player_id': player_id}).sort('timestamp', sort_order))
+    if limit > 0:
+        ratings = all_ratings[:limit]
+    else:
+        ratings = all_ratings
     return json_response(data={'ratings': [r.to_json_type() for r in ratings]})
 
 
