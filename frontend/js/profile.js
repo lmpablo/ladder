@@ -75,6 +75,10 @@ $(function(){
     $("#longest-w-streak").text(stats.longest_win_streak + " W")
     $("#longest-l-streak").text(stats.longest_lose_streak + " L")
 
+    matchups.sort(function(a, b) {
+      return b.last_played_against - a.last_played_against
+    })
+
     for (var i = 0, len = matchups.length; i < len; i++) {
       // buildMatchUpRows(oppName, oppId, oppPicture, record, lastPlayed, ppg, winPr)
       var m = matchups[i];
@@ -137,7 +141,8 @@ $(function(){
                   data: ratings.reverse(),
                   borderWidth: 1,
                   borderColor: "#3081E8",
-                  backgroundColor: 'rgba(48, 129, 232, 0.3)'
+                  backgroundColor: 'rgba(48, 129, 232, 0.3)',
+                  lineTension: 0.3
               }]
           },
           options: {
