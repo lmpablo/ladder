@@ -99,6 +99,10 @@ $(function(){
       // limited to the top N most recent rankings
       var ratingsData = data.data.ratings;
       var numRatings = ratingsData.length;
+      if (numRatings > 0) {
+        $('#ratings-graph').show();
+        $('#no-ratings').hide();
+      }
       var previousDate = "";
       var matchNum = 1;
       var ratings = ratingsData.map(function(el, index) {
