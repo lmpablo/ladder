@@ -4,6 +4,7 @@ $(function(){
   var ratingsToShow = 100;
 
   var myChart;
+  Chart.defaults.global.defaultFontFamily = '"GT Walsheim", "Avenir Next", "Helvetica Neue", Helvetica, Arial, sans-serif'
 
   function buildMatchRows(result, opponent, opponentID, score, date) {
     var resultClass = result == 'W' ? 'win' : 'loss';
@@ -171,7 +172,10 @@ $(function(){
 
   $('.update-ratings').on('click', function(e){
     e.preventDefault();
-    var toShow = parseInt($(this).attr('data-value'))
+    var that = $(this)
+    var toShow = parseInt(that.attr('data-value'))
+    $('.update-ratings').removeClass('selected');
+    that.addClass('selected');
     buildGraph(toShow)
   })
 });

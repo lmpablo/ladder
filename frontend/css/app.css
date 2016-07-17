@@ -33,13 +33,14 @@ html, body {
 }
 
 h1, h2, h3, h4, h5, h6 {
-  font-family: "GT Walsheim", "Avenir Next", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-family: "Bitter", "FF Meta Serif Pro", "Times", serif;
 }
 
 h1 {
   font-size: 42px;
   letter-spacing: -1px;
   font-weight: 500;
+  font-family: "Bitter"
 }
 
 #ratings-container {
@@ -78,11 +79,12 @@ h1 {
 }
 
 .sub-head {
-  font-family: "FF Meta Serif Pro";
+  font-family: "Bitter";
   font-size: 25px;
   color: #CBCBCB;
-  top: -15px;
+  top: -10px;
   position: relative;
+  letter-spacing: -1px;
 }
 
 .lb-header {
@@ -174,4 +176,21 @@ h1 {
 
 .lose-bar {
   background: #FF4F00;
+}
+
+.update-ratings {
+  padding: 3px 15px;
+  background: #E1E6EC;
+}
+
+.update-ratings:hover {
+  background: #fff;
+  -webkit-transition: background 200ms;
+  -o-transition: background 200ms;
+  transition: background 200ms;
+}
+
+.update-ratings.selected {
+  background: #fff;
+  cursor: default;
 }
