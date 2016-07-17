@@ -31,8 +31,13 @@ $(function(){
   $.get("/api/v1/players/" + playerID, function(data) {
     var user = data.data;
     $("img#profile-image").attr("src", user.profile_picture);
-    $("#profile-name").text("@" + user.slack_name);
-    $("#real-name").text(user.real_name);
+    if (user.real_name !== '') {
+      $("#profile-name").text("@" + user.slack_name);
+      $("#real-name").text(user.real_name);
+    } else {
+      $("#real-name").text("@" + user.slack_name);
+    }
+
     $("#profile-rating").text("(" + Number(user.rating).toFixed(0) + ")");
 
     var numGames = parseInt(user.num_games_played);
