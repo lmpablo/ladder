@@ -100,7 +100,7 @@ $(function(){
       // limited to the top N most recent rankings
       var ratingsData = data.data.ratings;
       var numRatings = ratingsData.length;
-      if (numRatings > 5) {
+      if (numRatings >= 5) {
         $('#ratings-graph').show();
         $('#no-ratings').hide();
       } else {
