@@ -76,12 +76,20 @@ $(function(){
     $("#longest-l-streak").text(stats.longest_lose_streak + " L")
 
     matchups.sort(function(a, b) {
-      return b.last_played_against - a.last_played_against
+      var ad = new Date(a.last_played_against);
+      var bd = new Date(b.last_played_against);
+      if (ad < bd) { return 1 }
+      else if (ad > bd) {
+        return -1
+      } else {
+        return 0
+      }
     })
 
     for (var i = 0, len = matchups.length; i < len; i++) {
       // buildMatchUpRows(oppName, oppId, oppPicture, record, lastPlayed, ppg, winPr)
       var m = matchups[i];
+      console.log(m.last_played_against, new Date(m.last_played_against), m.opp_slack_name)
       var record = m.games_won_against + "-" + m.games_lost_against;
       $matchups.append(buildMatchUpRows(m.opp_slack_name, m.opp_id, m.opp_profile_picture, record, new Date(m.last_played_against), m.ppg_against, m.pr_win_against))
     }
