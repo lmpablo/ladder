@@ -45,7 +45,7 @@
         '</div>'
       }
 
-      $.get("/api/v1/rankings", function(data){
+      $.get("/api/v2/rankings", function(data){
         var rankings = data.data.rankings;
         for (var i = 0, len = rankings.length; i < len; i++) {
           var r = rankings[i];

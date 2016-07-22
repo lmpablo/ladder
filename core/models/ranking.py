@@ -10,19 +10,23 @@ class Ranking(Document):
 
     structure = {
         'timestamp': datetime.datetime,
-        'last_updated': datetime.datetime,
         'rankings': [{
             'player_id': basestring,
-            'rating': int,
-            'rank': int
+            'real_name': basestring,
+            'slack_name': basestring,
+            'profile_picture': basestring,
+            'rating': float,
+            'num_games_played': int,
+            'num_games_won': int,
+            'rank': int,
+
         }]
     }
 
     required_fields = ['timestamp', 'rankings']
 
     default_values = {
-        'timestamp': datetime.datetime.today().replace(hour=0, minute=0, second=0, microsecond=0),
-        'last_updated': datetime.datetime.now()
+        'timestamp': datetime.datetime.today().replace(hour=0, minute=0, second=0, microsecond=0)
     }
 
     indexes = [
@@ -37,6 +41,7 @@ class Ranking(Document):
             assert player['player_id'], "player_id for rankings is required: {}".format(player)
             assert player['rating'], "rating for rankings is required: {}".format(player)
             assert player['rank'], "rank for rankings is required: {}".format(player)
+            assert player['num_games_played'], "num_games for rankings is required: {}".format(player)
         super(Ranking, self).validate(*args, **kwargs)
 
 

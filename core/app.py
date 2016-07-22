@@ -156,6 +156,8 @@ def add_match():
         else:
             calculate_match_ratings(match)
 
+
+
         # We have to re-read metadata from db as it was modified during either force_recalculate_ratings or
         # calculate_match_ratings
         metadata = db.Metadata.find_one()
@@ -282,6 +284,11 @@ def get_player_stats(player_id):
 
 # Rankings
 
+@app.route("/api/v2/rankings")
+def get_rankings_v2():
+    ranking = list(db.Ranking.find().sort('timestamp', -1).limit(1))[0]
+    return json_response(data={'rankings': ranking.rankings})
+
 @app.route("/api/v1/rankings")
 def get_rankings():
     limit = int(request.args.get('top', '50'))
@@ -370,6 +377,8 @@ def calculate_match_ratings(match):
             player.k_factor = 8
 
         player.save()
+
+    update_rankings(match.timestamp)
 
     metadata = db.Metadata.find_one()
     if metadata is None:
@@ -499,6 +508,23 @@ def add_to_stats(match, winner, loser):
 
     ws.save()
     ls.save()
+
+
+def update_rankings(timestamp):
+    players = list(db.Player.find())
+    sorted_players = sorted(players, key=lambda p: p.rating, reverse=True)
+    keys = ['player_id', 'rating', 'num_games_played', 'real_name', 'slack_name', 'profile_picture', 'num_games_won']
+
+    rankings = []
+    for index, player in enumerate(sorted_players):
+        r = {k: player[k] for k in keys}
+        r['rank'] = index + 1
+        rankings.append(r)
+
+    ts = timestamp.replace(hour=0, minute=0, second=0, microsecond=0)
+    fq = {'timestamp': ts}
+    uq = {'$set': {'rankings': rankings, 'timestamp': ts}}
+    db[DB_NAME][Ranking.__collection__].find_and_modify(fq, uq, upsert=True)
 
 
 def ensure_indexes():
