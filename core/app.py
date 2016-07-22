@@ -284,10 +284,12 @@ def get_player_stats(player_id):
 
 # Rankings
 
+
 @app.route("/api/v2/rankings")
 def get_rankings_v2():
     ranking = list(db.Ranking.find().sort('timestamp', -1).limit(1))[0]
     return json_response(data={'rankings': ranking.rankings})
+
 
 @app.route("/api/v1/rankings")
 def get_rankings():
@@ -524,7 +526,7 @@ def update_rankings(timestamp):
     ts = timestamp.replace(hour=0, minute=0, second=0, microsecond=0)
     fq = {'timestamp': ts}
     uq = {'$set': {'rankings': rankings, 'timestamp': ts}}
-    db[DB_NAME][Ranking.__collection__].find_and_modify(fq, uq, upsert=True)
+    db[DB_NAME][Ranking.__collection__].update(fq, uq, upsert=True)
 
 
 def ensure_indexes():
