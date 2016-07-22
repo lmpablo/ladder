@@ -28,7 +28,7 @@ $(function(){
     '</div>'
   }
 
-  $.get("/api/v1/players/" + playerID, function(data) {
+  $.get("/api/v2/players/" + playerID, function(data) {
     var user = data.data;
     $("img#profile-image").attr("src", user.profile_picture);
     if (user.real_name !== '') {
@@ -52,7 +52,7 @@ $(function(){
     $(".lose-bar").css("width", Number(lossesPercentage).toFixed(1) + "%")
   })
 
-  $.get("/api/v1/rankings?top=-1", function(data){
+  $.get("/api/v2/rankings?top=-1", function(data){
     var rankings = data.data.rankings;
     var userData = ""
     for (var i = 0, len = rankings.length; i < len; i++) {
@@ -66,7 +66,7 @@ $(function(){
     }
   });
 
-  $.get("/api/v1/players/" + playerID +"/stats", function(data) {
+  $.get("/api/v2/players/" + playerID +"/stats", function(data) {
     var stats = data.data;
     var matchups = data.data.match_ups;
     var $matchups = $("#match-ups");
@@ -100,7 +100,7 @@ $(function(){
     $("time.timeago").timeago();
   })
 
-  $.get("/api/v1/players/" + playerID + "/matches?sort=-1&limit=10", function(data) {
+  $.get("/api/v2/players/" + playerID + "/matches?sort=-1&limit=10", function(data) {
     var matches = data.data.matches;
     var matchHistoryDiv = $("#match-history")
     for (var i = 0, len = matches.length; i < len; i++) {
@@ -111,7 +111,7 @@ $(function(){
 
 
   function buildGraph(toShow) {
-    $.get("/api/v1/players/" + playerID + "/ratings?sort=descending&top=" + toShow, function(data) {
+    $.get("/api/v2/players/" + playerID + "/ratings?sort=descending&top=" + toShow, function(data) {
       // the ratings come in newest -> oldest order,
       // limited to the top N most recent rankings
       var ratingsData = data.data.ratings;
