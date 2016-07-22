@@ -71,7 +71,7 @@ def matches_view():
 
 # Players
 
-@app.route("/api/v1/players/<player_id>")
+@app.route("/api/v2/players/<player_id>")
 def get_player(player_id):
     user = db.Player.find_one({'player_id': player_id})
 
@@ -82,13 +82,13 @@ def get_player(player_id):
         return json_response(res.to_json_type())
 
 
-@app.route("/api/v1/players")
+@app.route("/api/v2/players")
 def get_players():
     players = list(db.Player.find())
     return json_response(data={'players': [u.to_json_type() for u in players]})
 
 
-@app.route("/api/v1/players", methods=['POST'])
+@app.route("/api/v2/players", methods=['POST'])
 def add_player():
     json_request = request.get_json()
     player = db.Player()
@@ -111,7 +111,7 @@ def add_player():
 
 # Matches
 
-@app.route("/api/v1/matches/<match_id>")
+@app.route("/api/v2/matches/<match_id>")
 def get_match(match_id):
     match = db.Match.find_one({'match_id': match_id})
 
@@ -122,13 +122,13 @@ def get_match(match_id):
         return json_response(res.to_json_type())
 
 
-@app.route("/api/v1/matches")
+@app.route("/api/v2/matches")
 def get_matches():
     matches = list(db.Match.find({}, {'_id': 0}))
     return json_response(data={'matches': [m.to_json_type() for m in matches]})
 
 
-@app.route("/api/v1/matches", methods=['POST'])
+@app.route("/api/v2/matches", methods=['POST'])
 def add_match():
     json_request = request.get_json()
     match = db.Match()
@@ -171,7 +171,7 @@ def add_match():
         return json_response(reason="Validation Error", data=str(e), status="error", code=400)
 
 
-@app.route("/api/v1/matches/delete", methods=['POST'])
+@app.route("/api/v2/matches/delete", methods=['POST'])
 def delete_match():
     json_request = request.get_json()
     #TODO: AUTH
@@ -192,7 +192,7 @@ def delete_match():
 
 # Player <-> Match
 
-@app.route("/api/v1/players/<player_id>/matches")
+@app.route("/api/v2/players/<player_id>/matches")
 def get_player_matches(player_id):
     limit = int(request.args.get('limit', '0'))
     sort = int(request.args.get('sort', '1'))
@@ -214,7 +214,7 @@ def get_player_matches(player_id):
 
 # Rating
 
-@app.route("/api/v1/ratings")
+@app.route("/api/v2/ratings")
 def get_all_ratings():
     """
     Returns all historical ratings for all players
@@ -223,7 +223,7 @@ def get_all_ratings():
     return json_response(data={'ratings': [r.to_json_type() for r in ratings]})
 
 
-@app.route("/api/v1/ratings", methods=['PUT'])
+@app.route("/api/v2/ratings", methods=['PUT'])
 def force_recalculate_ratings():
     """
     Clears the entire list of ratings and re-calculates everything from scratch
@@ -253,7 +253,7 @@ def force_recalculate_ratings():
 
 # Player <-> Rating
 
-@app.route("/api/v1/players/<player_id>/ratings")
+@app.route("/api/v2/players/<player_id>/ratings")
 def get_player_ratings(player_id):
     limit = int(request.args.get('top', '10'))
     _sort_order = request.args.get('sort', 'ascending')
@@ -267,7 +267,7 @@ def get_player_ratings(player_id):
 
 
 # Player <-> Stats
-@app.route("/api/v1/players/<player_id>/stats")
+@app.route("/api/v2/players/<player_id>/stats")
 def get_player_stats(player_id):
     user = db.PlayerStats.find_one({'player_id': player_id})
 
@@ -329,7 +329,7 @@ def get_rankings():
 
 # Misc
 
-@app.route("/api/v1/probability", methods=['POST'])
+@app.route("/api/v2/probability", methods=['POST'])
 def get_probability():
     json_request = request.get_json()
 
