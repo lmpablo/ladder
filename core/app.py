@@ -156,8 +156,6 @@ def add_match():
         else:
             calculate_match_ratings(match)
 
-
-
         # We have to re-read metadata from db as it was modified during either force_recalculate_ratings or
         # calculate_match_ratings
         metadata = db.Metadata.find_one()
@@ -514,7 +512,7 @@ def add_to_stats(match, winner, loser):
 
 def update_rankings(timestamp):
     players = list(db.Player.find())
-    sorted_players = sorted(players, key=lambda p: p.rating, reverse=True)
+    sorted_players = sorted([p for p in players if p.num_games_played >= 5], key=lambda p: p.rating, reverse=True)
     keys = ['player_id', 'rating', 'num_games_played', 'real_name', 'slack_name', 'profile_picture', 'num_games_won']
 
     rankings = []
