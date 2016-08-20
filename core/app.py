@@ -1,6 +1,8 @@
 import uuid
 
 import datetime
+from collections import defaultdict
+
 from flask import Flask, request, render_template, send_from_directory
 from flask.json import jsonify
 from mongokit import Connection
@@ -76,7 +78,7 @@ def get_player(player_id):
     user = db.Player.find_one({'player_id': player_id})
 
     if user is None:
-        return json_response(data={}, code=400, status="error", reason="User Not Found")
+        return json_response(data={}, code=400, status="error", reason="player_not_found")
     else:
         res = user
         return json_response(res.to_json_type())
@@ -102,7 +104,7 @@ def add_player():
     try:
         player.validate()
         if db.Player.exists(player.player_id):
-            return json_response(status="error", reason="Player already exists", code=400)
+            return json_response(status="error", reason="player_already_exists", code=400)
         player.save()
         return json_response()
     except SchemaDocumentError, e:
@@ -116,7 +118,7 @@ def get_match(match_id):
     match = db.Match.find_one({'match_id': match_id})
 
     if match is None:
-        return json_response(data={}, code=400, status="error", reason="Match Not Found")
+        return json_response(data={}, code=400, status="error", reason="match_not_found")
     else:
         res = match
         return json_response(res.to_json_type())
@@ -166,9 +168,11 @@ def add_match():
         return json_response()
 
     except TypeError, e:
-        return json_response(data=str(e), reason="Type Error", status="error", code=400)
+        return json_response(data=str(e), reason="type_error", status="error", code=400)
     except SchemaDocumentError, e:
-        return json_response(reason="Validation Error", data=str(e), status="error", code=400)
+        return json_response(reason="validation_error", data=str(e), status="error", code=400)
+    except KeyError, e:
+        return json_response(reason="player_not_found", data=str(e), status="error", code=400)
 
 
 @app.route("/api/v2/matches/delete", methods=['POST'])
@@ -176,7 +180,7 @@ def delete_match():
     json_request = request.get_json()
     #TODO: AUTH
     if 'match_id' not in json_request:
-        return json_response(data={}, reason="Missing match_id param", status="error", code=400)
+        return json_response(data={}, reason="missing_param", status="error", code=400)
     match = db.Match.find_one({'match_id': json_request['match_id']})
     if match:
         match.delete()
@@ -187,7 +191,7 @@ def delete_match():
             word = "with"
         return json_response(data={}, reason="Successfully deleted match {} recalculation of ratings".format(word))
     else:
-        return json_response(data={}, reason="Match does not exist", status="error", code=400)
+        return json_response(data={}, reason="match_not_found", status="error", code=400)
 
 
 # Player <-> Match
@@ -241,7 +245,7 @@ def force_recalculate_ratings():
             last_match = match
 
         except PlayerNotFoundException:
-            return json_response(status="error", reason="One of the matches has an invalid player", code=500)
+            return json_response(status="error", reason="invalid_player", code=500)
 
     # Update last match date in metadata to last match processed
     metadata = db.Metadata.find_one()
@@ -325,6 +329,36 @@ def get_rankings():
     if limit == -1:
         return json_response(data={'rankings': with_ranking + without_ranking})
     return json_response(data={'rankings': with_ranking[:limit] + without_ranking})
+
+# Player <-> Rating
+
+@app.route("/api/v2/rankings/all")
+def get_historical_rankings():
+    limit = int(request.args.get('top', '10'))
+    _sort_order = request.args.get('sort', 'ascending')
+    sort_order = 1 if _sort_order == 'ascending' else -1
+    all_rankings = list(db.Ranking.find({}).sort('timestamp', sort_order))
+    all_players = set([p.player_id for p in list(db.Player.find())])
+    if limit > 0:
+        rankings = all_rankings[:limit]
+    else:
+        rankings = all_rankings
+
+    historical_ranking = defaultdict(list)
+    for snapshot in rankings:
+        seen = set()
+        for ranking in snapshot['rankings']:
+            historical_ranking[ranking['player_id']].append({
+                'rank': ranking['rank'],
+                'timestamp': snapshot['timestamp']
+            })
+            seen.add(ranking['player_id'])
+
+        for pid in all_players:
+            if pid not in seen:
+                historical_ranking[pid].append('')
+
+    return json_response(data={'rankings': historical_ranking})
 
 
 # Misc

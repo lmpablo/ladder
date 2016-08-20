@@ -48,7 +48,8 @@ class Match(Document):
 
     def validate(self, *args, **kwargs):
         for participant in self['participants']:
-            assert participant['player_id'], "player_id for participans is required: {}".format(participant)
+            if participant['player_id'] is None:
+                raise KeyError("Player ID not found")
             if 'score' not in participant:
                 participant['score'] = -1
         super(Match, self).validate(*args, **kwargs)
